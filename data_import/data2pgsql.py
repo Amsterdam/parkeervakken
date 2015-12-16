@@ -19,10 +19,13 @@ def setup_argparse():
     subparsers = parser.add_subparsers()
 
     init_parser = subparsers.add_parser('initialize')
+    init_parser.add_argument('--force-drop',
+                             action='store_true',
+                             default=False)
     init_parser.set_defaults(command='init')
 
     update_parser = subparsers.add_parser('update')
-    update_parser.set_daults(command='update')
+    update_parser.set_defaults(command='update')
 
     return parser.parse_args()
 
@@ -159,12 +162,13 @@ def import_zip_data(zip_file,
 
     stadsdeel = stadsdeel.lower()
 
-    drop_table(conn, cur, schema, tmp_table)
+    drop_table(conn, cur, tmp_table, schema)
 
-    shp2pgsql_cmd = shlex.split('shp2pgsql -I {shape_file} {schema}.{table}'
-                                .format(shape_file=str(shp_file),
-                                        table=tmp_table,
-                                        schema=schema))
+    cmd_fmt = 'shp2pgsql -W LATIN1 -I {shape_file} {schema}.{table}'
+
+    shp2pgsql_cmd = shlex.split(cmd_fmt.format(shape_file=str(shp_file),
+                                               table=tmp_table,
+                                               schema=schema))
 
     # Create the sql statements for loading shape data into the database
     try:
@@ -183,21 +187,76 @@ def import_zip_data(zip_file,
         conn.close()
         raise
 
+    # Truncate csv file
+    truncate_csv = """TRUNCATE {schema}.{table}""".format(schema=schema,
+                                                          table=tmp_csv_table)
+
+    try:
+        cur.execute(truncate_csv)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        conn.close()
+        raise
+
     # Load csv file into temporary csv table in the database
     try:
-        with csv_file.open() as f:
-            columns = f.readline().lower().split(';')
-            cur.copy_from(f,
-                          '{}.{}'.format(schema, tmp_csv_table),
-                          sep=';',
-                          null='',
-                          columns=columns)
+        with csv_file.open(encoding='latin1') as f:
+            copy_stmt = """COPY {schema}.{table} FROM STDIN
+            WITH (
+                FORMAT csv,
+                HEADER TRUE,
+                DELIMITER ';',
+                QUOTE '"',
+                ENCODING 'LATIN1',
+                NULL ''
+            )
+            """.format(schema=schema, table=tmp_csv_table)
+            cur.copy_expert(copy_stmt, f)
     except Exception:
         conn.close()
         raise
 
     # Update data from the temporary table into the history table
-    update_history(conn, cur, tmp_table, hist_table, schema, stadsdeel, date)
+    columns = (
+        "parkeer_id",
+        "buurtcode",
+        "straatnaam",
+        "soort",
+        "type",
+        "aantal",
+        "kenteken",
+        "e_type",
+        "bord",
+        "begintijd1",
+        "eindtijd1",
+        "ma_vr",
+        "ma_za",
+        "zo",
+        "ma",
+        "di",
+        "wo",
+        "do",
+        "vr",
+        "za",
+        "eindtijd2",
+        "begintijd2",
+        "opmerking",
+        "tvm_begind",
+        "tvm_eindd",
+        "tvm_begint",
+        "tvm_eindt",
+        "tvm_opmerk",
+        "geom",
+    )
+    update_history(conn,
+                   cur,
+                   tmp_table,
+                   hist_table,
+                   schema,
+                   stadsdeel,
+                   date,
+                   columns)
 
     # Update date from the temporary csv table into the csv history table
     update_history(conn,
@@ -209,7 +268,14 @@ def import_zip_data(zip_file,
                    date)
 
 
-def update_history(conn, cur, tmp_table, hist_table, schema, stadsdeel, date):
+def update_history(conn,
+                   cur,
+                   tmp_table,
+                   hist_table,
+                   schema,
+                   stadsdeel,
+                   date,
+                   columns='*'):
     """
     :type conn: psycopg2.extensions.connection
     :type cur: psycopg2.extensions.connection
@@ -219,6 +285,13 @@ def update_history(conn, cur, tmp_table, hist_table, schema, stadsdeel, date):
     :type stadsdeel: str
     :type date: str
     """
+
+    if isinstance(columns, (list, tuple)):
+        quoted = [
+            '"{}"'.format(column)
+            for column in columns
+        ]
+        columns = ', '.join(quoted)
 
     partition_table = create_partition(conn,
                                        cur,
@@ -240,15 +313,14 @@ def update_history(conn, cur, tmp_table, hist_table, schema, stadsdeel, date):
 
     # Insert data from the temporary table into the history table
     insert_stmt = """INSERT INTO {schema}.{hist_table}
-    SELECT *, {stadsdeel} AS stadsdeel, {date} AS aanvraag_datum
+    SELECT {columns}, %(stadsdeel)s AS stadsdeel, %(date)s AS aanvraag_datum
     FROM {schema}.{tmp_table}""".format(schema=schema,
                                         hist_table=partition_table,
-                                        stadsdeel=stadsdeel,
-                                        date=date,
+                                        columns=columns,
                                         tmp_table=tmp_table)
 
     try:
-        cur.execute(insert_stmt)
+        cur.execute(insert_stmt, {'stadsdeel': stadsdeel, 'date': date})
         conn.commit()
     except Exception:
         conn.close()
@@ -296,7 +368,7 @@ def drop_table(conn, cur, table, schema):
     """
 
     stmt = (
-        "DROP TABLE IF EXISTS {schema}.{table}"
+        "DROP TABLE IF EXISTS {schema}.{table} CASCADE"
         .format(schema=schema, table=table)
     )
 
@@ -332,22 +404,25 @@ def table_exists(conn, cur, table, schema):
     return len(results) > 0
 
 
-def create_hist_table(conn, cur, table, schema):
+def create_hist_table(conn, cur, table, schema, force_drop=False):
     """
     :type conn: psycopg2.extensions.connection
     :type cur: psycopg2.extensions.connection
     :type table: str
     :type schema: str
+    :type force_drop: bool
     """
 
-    if table_exists(conn, cur, table, schema):
+    if force_drop:
+        drop_table(conn, cur, table, schema)
+    elif table_exists(conn, cur, table, schema):
         return
 
     create_table = """CREATE TABLE IF NOT EXISTS {schema}.{table} (
     "parkeer_id" varchar(10),
     "buurtcode" varchar(20),
     "straatnaam" varchar(40),
-    "soort" varchar(10),
+    "soort" varchar(20),
     "type" varchar(20),
     "aantal" numeric(10,0),
     "kenteken" varchar(20),
@@ -371,12 +446,14 @@ def create_hist_table(conn, cur, table, schema):
     "tvm_eindd" date,
     "tvm_begint" varchar(20),
     "tvm_eindt" varchar(20),
-    "tvm_opmerk" varchar(100),
-    "stadsdeel" varchar(40),
-    "aanvraag_datum" varchar(10)
+    "tvm_opmerk" varchar(100)
     );
-    ALTER TABLE "{schema}"."{table}" ADD PRIMARY KEY (parkeer_id, datum);
     SELECT AddGeometryColumn(%(schema)s,%(table)s,'geom','0','MULTIPOLYGON',2);
+    ALTER TABLE "{schema}"."{table}"
+        ADD COLUMN "stadsdeel" varchar(40),
+        ADD COLUMN "aanvraag_datum" varchar(40);
+    ALTER TABLE "{schema}"."{table}"
+        ADD PRIMARY KEY (parkeer_id, aanvraag_datum);
     """.format(schema=schema, table=table)
 
     try:
@@ -388,23 +465,27 @@ def create_hist_table(conn, cur, table, schema):
         raise
 
 
-def create_hist_csv_table(conn, cur, schema, table):
+def create_hist_csv_table(conn, cur, table, schema, force_drop=False):
     """
     :type conn: psycopg2.extensions.connection
     :type cur: psycopg2.extensions.connection
     :type table: str
     :type schema: str
+    :type force_drop: bool
     """
 
-    if table_exists(conn, cur, table, schema):
+    if force_drop:
+        drop_table(conn, cur, table, schema)
+    elif table_exists(conn, cur, table, schema):
         return
 
     create_csv_table = """CREATE TABLE IF NOT EXISTS {schema}.{csv} (
-
         "parkeer_id" varchar(10),
         "buurtcode" varchar(20),
         "straatnaam" varchar(40),
-        "soort" varchar(10),
+        "x" varchar(10),
+        "y" varchar(10),
+        "soort" varchar(20),
         "type" varchar(20),
         "aantal" numeric(10,0),
         "kenteken" varchar(20),
@@ -421,8 +502,6 @@ def create_hist_csv_table(conn, cur, schema, table):
         "do" boolean,
         "vr" boolean,
         "za" boolean,
-        "x" numeric(7,2),
-        "y" numeric(7,2),
         "eindtijd2" varchar(20),
         "begintijd2" varchar(20),
         "opmerking" varchar(100),
@@ -444,22 +523,27 @@ def create_hist_csv_table(conn, cur, schema, table):
         raise
 
 
-def create_tmp_csv_table(conn, cur, schema, table):
+def create_tmp_csv_table(conn, cur, table, schema, force_drop=False):
     """
     :type conn: psycopg2.extensions.connection
     :type cur: psycopg2.extensions.connection
     :type table: str
     :type schema: str
+    :type force_drop: bool
     """
 
-    if table_exists(conn, cur, table, schema):
+    if force_drop:
+        drop_table(conn, cur, table, schema)
+    elif table_exists(conn, cur, table, schema):
         return
 
     create_csv_table = """CREATE TABLE IF NOT EXISTS {schema}.{csv} (
         "parkeer_id" varchar(10),
         "buurtcode" varchar(20),
         "straatnaam" varchar(40),
-        "soort" varchar(10),
+        "x" varchar(10),
+        "y" varchar(10),
+        "soort" varchar(20),
         "type" varchar(20),
         "aantal" numeric(10,0),
         "kenteken" varchar(20),
@@ -476,8 +560,6 @@ def create_tmp_csv_table(conn, cur, schema, table):
         "do" boolean,
         "vr" boolean,
         "za" boolean,
-        "x" numeric(7,2),
-        "y" numeric(7,2),
         "eindtijd2" varchar(20),
         "begintijd2" varchar(20),
         "opmerking" varchar(100),
@@ -485,7 +567,7 @@ def create_tmp_csv_table(conn, cur, schema, table):
         "tvm_eindd" date,
         "tvm_begint" varchar(20),
         "tvm_eindt" varchar(20),
-        "tvm_opmerk" varchar(100),
+        "tvm_opmerk" varchar(100)
     )""".format(schema=schema, csv=table)
 
     try:
@@ -502,6 +584,7 @@ def initialize_database(database,
                         password,
                         host,
                         port,
+                        force_drop=False,
                         hist_table='h_parkeervakken',
                         tmp_csv_table='s_csv_parkeervakken',
                         hist_csv_table='h_csv_parkeervakken',
@@ -541,9 +624,9 @@ def initialize_database(database,
 
     cur = conn.cursor()
 
-    create_hist_table(conn, cur, hist_table, schema)
-    create_tmp_csv_table(conn, cur, tmp_csv_table)
-    create_hist_csv_table(conn, cur, hist_csv_table)
+    create_hist_table(conn, cur, hist_table, schema, force_drop)
+    create_tmp_csv_table(conn, cur, tmp_csv_table, schema, force_drop)
+    create_hist_csv_table(conn, cur, hist_csv_table, schema, force_drop)
 
 
 def main():
@@ -570,10 +653,12 @@ def main():
     schema = config.get('schema', 'public')
 
     if command == 'init':
+        force_drop = args.force_drop
         initialize_database(hist_table=hist_table,
                             tmp_csv_table=tmp_csv_table,
                             hist_csv_table=hist_csv_table,
                             schema=schema,
+                            force_drop=force_drop,
                             **database_credentials)
     elif command == 'update':
         source = pathlib.Path(config['source'])
