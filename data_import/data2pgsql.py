@@ -1,4 +1,5 @@
 import subprocess
+import traceback
 import argparse
 import re
 import zipfile
@@ -11,17 +12,39 @@ import yaml
 import psycopg2
 
 
-def setup_argparse():
-    parser = argparse.ArgumentParser()
+stadsdeel_c = re.compile(r'^(?P<stadsdeel>[a-zA-Z-]*)_parkeerhaven.*_'
+                         r'(?P<date>[0-9]{8})$')
 
-    parser.add_argument('--config', type=pathlib.Path)
+
+def setup_argparse():
+    """Setup argument parser for command line options. It also includes a
+    subparser to differentiate between initializing the tables in the database
+    and importing data from shape and csv files.
+    """
+
+    parser_description = """Either setup tables in a database for loading shape
+    and csv files or load data into the tables."""
+
+    parser = argparse.ArgumentParser(description=parser_description)
+
+    parser.add_argument('--config',
+                        type=pathlib.Path,
+                        help='The filename for the configuration')
 
     subparsers = parser.add_subparsers()
 
-    init_parser = subparsers.add_parser('initialize')
+    init_description = """Initialize the tables in a database. The structure
+    consists of 2 layers, the first layer has a table where data from csv files
+    are temporarily stored. The other table is dropped for each new shape file
+    that is loaded. The second layer is a history layer containing 2 tables.
+    One for data read from csv files and one for shape data. The tables are
+    partioned on "stadsdeel"."""
+
+    init_parser = subparsers.add_parser('initialize', help=init_description)
     init_parser.add_argument('--force-drop',
                              action='store_true',
-                             default=False)
+                             default=False,
+                             help="Drop tables if they already exist")
     init_parser.set_defaults(command='init')
 
     update_parser = subparsers.add_parser('update')
@@ -31,7 +54,8 @@ def setup_argparse():
 
 
 def clean_directory(directory):
-    """
+    """Remove all data from a directory, if it doesn't exist do nothing.
+
     :type directory: pathlib.Path
     """
 
@@ -51,9 +75,15 @@ def import_data(database,
                 schema='public',
                 hist_table='h_parkeervakken',
                 hist_csv_table='h_csv_parkeervakken',
-                tmp_csv_table='s_csv_parkeervakken',
-                tmp_table='s_parkeervakken'):
-    """
+                tmp_table='s_parkeervakken',
+                tmp_csv_table='s_csv_parkeervakken'):
+    """Load data from zip files given in :param:`source` into the database.
+    These zip files should consist of shape files and files connected to the
+    shape files. Furthermore it should also contain csv files. The data in
+    these csv and shape files contains data about reservations of parking
+    spaces. There should be files for each `stadsdeel` (city part), but it
+    doesn't matter if a `stadsdeel` is ommitted.
+
     :type database: str
     :type user: str
     :type password: str
@@ -64,8 +94,8 @@ def import_data(database,
     :type schema: str
     :type hist_table: str
     :type hist_csv_table: str
-    :type tmp_csv_table: str
     :type tmp_table: str
+    :type tmp_csv_table: str
     """
 
     source = source.absolute()
@@ -97,18 +127,32 @@ def import_data(database,
                         tmp_csv_table,
                         tmp_table)
 
+    conn.close()
 
-def get_file(directory, suffix):
+
+def copy_csv(cur, table, schema, csv_file, encoding):
     """
-    :type directory: pathlib.Path
-    :type suffix: str
+    :type cur: psycopg2.extensions.connection
+    :type table: str
+    :type schema: str
+    :type csv_file: pathlib.Path
     """
 
-    for f in directory.iterdir():
-        if f.suffix == suffix:
-            return f
+    with csv_file.open(encoding=encoding) as f:
+        if encoding.startswith('cp'):
+            encoding = 'WIN{}'.format(encoding[2:])
+        copy_stmt = """COPY {schema}.{table} FROM STDIN
+        WITH (
+            FORMAT csv,
+            HEADER TRUE,
+            DELIMITER ';',
+            QUOTE '"',
+            ENCODING '{encoding}',
+            NULL ''
+        )
+        """.format(schema=schema, table=table, encoding=encoding.upper())
 
-    raise FileNotFoundError()
+        cur.copy_expert(copy_stmt, f)
 
 
 def import_zip_data(zip_file,
@@ -127,27 +171,34 @@ def import_zip_data(zip_file,
     :type target: patrhlib.Path
     """
 
-    c = re.compile(r'^(?P<stadsdeel>[a-zA-Z]*)_parkeerhaven.*_'
-                   r'(?P<date>[0-9]{8})$')
-
     clean_directory(target)
 
     with zipfile.ZipFile(str(zip_file)) as z:
         z.extractall(str(target))
 
-    try:
-        shp_file = get_file(target, '.shp')
-    except FileNotFoundError:
-        conn.close()
-        raise
+    for shp_file in target.glob('*.shp'):
+        load_shape_file(conn, cur, tmp_table, hist_table, schema, shp_file)
 
-    try:
-        csv_file = get_file(target, '.csv')
-    except FileNotFoundError:
-        conn.close()
-        raise
+    for csv_file in target.glob('*.csv'):
+        load_csv_file(conn,
+                      cur,
+                      tmp_csv_table,
+                      hist_csv_table,
+                      schema,
+                      csv_file)
 
-    match = c.match(shp_file.stem)
+
+def load_shape_file(conn, cur, tmp_table, hist_table, schema, shp_file):
+    """
+    :type conn: psycopg2.extensions.connection
+    :type cur: psycopg2.extensions.connection
+    :type tmp_table: str
+    :type hist_table: str
+    :type schema: str
+    :type shp_file: pathlib.Path
+    """
+
+    match = stadsdeel_c.match(shp_file.stem)
 
     if match is None:
         conn.close()
@@ -160,7 +211,7 @@ def import_zip_data(zip_file,
     if stadsdeel == '':
         stadsdeel = 'unknown'
 
-    stadsdeel = stadsdeel.lower()
+    stadsdeel = stadsdeel.lower().replace('-', '_')
 
     drop_table(conn, cur, tmp_table, schema)
 
@@ -184,36 +235,6 @@ def import_zip_data(zip_file,
         conn.commit()
     except Exception:
         conn.rollback()
-        conn.close()
-        raise
-
-    # Truncate csv file
-    truncate_csv = """TRUNCATE {schema}.{table}""".format(schema=schema,
-                                                          table=tmp_csv_table)
-
-    try:
-        cur.execute(truncate_csv)
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        conn.close()
-        raise
-
-    # Load csv file into temporary csv table in the database
-    try:
-        with csv_file.open(encoding='latin1') as f:
-            copy_stmt = """COPY {schema}.{table} FROM STDIN
-            WITH (
-                FORMAT csv,
-                HEADER TRUE,
-                DELIMITER ';',
-                QUOTE '"',
-                ENCODING 'LATIN1',
-                NULL ''
-            )
-            """.format(schema=schema, table=tmp_csv_table)
-            cur.copy_expert(copy_stmt, f)
-    except Exception:
         conn.close()
         raise
 
@@ -258,11 +279,63 @@ def import_zip_data(zip_file,
                    date,
                    columns)
 
+
+def load_csv_file(conn, cur, tmp_table, hist_table, schema, csv_file):
+    """
+    :type conn: psycopg2.extensions.connection
+    :type cur: psycopg2.extensions.connection
+    :type tmp_table: str
+    :type hist_table: str
+    :type schema: str
+    :type csv_file: pathlib.Path
+    """
+
+    match = stadsdeel_c.match(csv_file.stem)
+
+    if match is None:
+        conn.close()
+
+        # TODO
+        raise Exception
+
+    stadsdeel, date = match.groups()
+
+    if stadsdeel == '':
+        stadsdeel = 'unknown'
+
+    stadsdeel = stadsdeel.lower().replace('-', '_')
+
+    # Truncate csv file
+    truncate_csv = """TRUNCATE {schema}.{table}""".format(schema=schema,
+                                                          table=tmp_table)
+
+    try:
+        cur.execute(truncate_csv)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        conn.close()
+        raise
+
+    # Load csv file into temporary csv table in the database
+    try:
+        copy_csv(cur, tmp_table, schema, csv_file, 'cp1252')
+    except psycopg2.DataError:
+        conn.rollback()
+        print('Skipping', csv_file)
+        traceback.print_exc()
+        return
+    except Exception:
+        conn.rollback()
+        print('Could not read data for file', str(csv_file))
+        conn.close()
+        raise
+
     # Update date from the temporary csv table into the csv history table
     update_history(conn,
                    cur,
-                   tmp_csv_table,
-                   hist_csv_table,
+                   tmp_table,
+                   hist_table,
                    schema,
                    stadsdeel,
                    date)
@@ -487,26 +560,26 @@ def create_hist_csv_table(conn, cur, table, schema, force_drop=False):
         "y" varchar(10),
         "soort" varchar(20),
         "type" varchar(20),
-        "aantal" numeric(10,0),
+        "aantal" varchar(20),
         "kenteken" varchar(20),
         "e_type" varchar(5),
         "bord" varchar(50),
         "begintijd1" varchar(20),
         "eindtijd1" varchar(20),
-        "ma_vr" boolean,
-        "ma_za" boolean,
-        "zo" boolean,
-        "ma" boolean,
-        "di" boolean,
-        "wo" boolean,
-        "do" boolean,
-        "vr" boolean,
-        "za" boolean,
+        "ma_vr" varchar(10),
+        "ma_za" varchar(10),
+        "zo" varchar(10),
+        "ma" varchar(10),
+        "di" varchar(10),
+        "wo" varchar(10),
+        "do" varchar(10),
+        "vr" varchar(10),
+        "za" varchar(10),
         "eindtijd2" varchar(20),
         "begintijd2" varchar(20),
         "opmerking" varchar(100),
-        "tvm_begind" date,
-        "tvm_eindd" date,
+        "tvm_begind" varchar(30),
+        "tvm_eindd" varchar(30),
         "tvm_begint" varchar(20),
         "tvm_eindt" varchar(20),
         "tvm_opmerk" varchar(100),
@@ -545,26 +618,26 @@ def create_tmp_csv_table(conn, cur, table, schema, force_drop=False):
         "y" varchar(10),
         "soort" varchar(20),
         "type" varchar(20),
-        "aantal" numeric(10,0),
+        "aantal" varchar(20),
         "kenteken" varchar(20),
         "e_type" varchar(5),
         "bord" varchar(50),
         "begintijd1" varchar(20),
         "eindtijd1" varchar(20),
-        "ma_vr" boolean,
-        "ma_za" boolean,
-        "zo" boolean,
-        "ma" boolean,
-        "di" boolean,
-        "wo" boolean,
-        "do" boolean,
-        "vr" boolean,
-        "za" boolean,
+        "ma_vr" varchar(10),
+        "ma_za" varchar(10),
+        "zo" varchar(10),
+        "ma" varchar(10),
+        "di" varchar(10),
+        "wo" varchar(10),
+        "do" varchar(10),
+        "vr" varchar(10),
+        "za" varchar(10),
         "eindtijd2" varchar(20),
         "begintijd2" varchar(20),
         "opmerking" varchar(100),
-        "tvm_begind" date,
-        "tvm_eindd" date,
+        "tvm_begind" varchar(30),
+        "tvm_eindd" varchar(30),
         "tvm_begint" varchar(20),
         "tvm_eindt" varchar(20),
         "tvm_opmerk" varchar(100)
