@@ -207,27 +207,6 @@ def import_data(database,
     conn.close()
 
 
-def parse_encoding(src, src_encoding, dest, dest_encoding):
-    """Change the encoding of a file.
-
-    :type src: pathlib.Path
-    :param src: The source file of which the encoding should be changed.
-    :type src_encoding: str
-    :param src_encoding: The encoding of the source file, for example utf-8 or
-    latin1.
-    :type dest: pathlib.Path
-    :param dest: The filename to which the new file should be written.
-    :type dest_encoding: str
-    :param dest_encoding: The encoding to which :param:`src` should be changed
-    into, for example latin1 or cp1252.
-    """
-
-    with src.open(encoding=src_encoding) as f_src, \
-            dest.open(encoding=dest_encoding, mode='w') as f_dest:
-        data = f_src.read()
-        f_dest.write(data)
-
-
 def copy_csv(cur, table, schema, csv_file, encoding):
     """Copy a csv file into a database.
 
@@ -295,13 +274,24 @@ def import_zip_data(zip_file,
 
 
 def load_shape_file(conn, cur, tmp_table, hist_table, schema, shp_file):
-    """
+    """Import data from shape files into the database. The shape files are
+    imported by first creating an sql script using `shp2pgsql` and executing
+    this on the database.
+
     :type conn: psycopg2.extensions.connection
     :type cur: psycopg2.extensions.connection
     :type tmp_table: str
+    :param tmp_table: The table name to which the data from the shape files is
+    imported. Note that this table is dropped and recreated before inserting
+    any data.
     :type hist_table: str
+    :param hist_table: The hostory table to which data is moved after it is
+    imported. This table is used to the source for other tables and should
+    contain all data ever imported.
     :type schema: str
+    :param schema: The schema name where the tables are created in.
     :type shp_file: pathlib.Path
+    :param shp_file: The path to the shape file.
     """
 
     match = stadsdeel_c.match(shp_file.stem)
@@ -423,12 +413,8 @@ def load_csv_file(conn, cur, tmp_table, hist_table, schema, csv_file):
         conn.close()
         raise
 
-    # Load csv file into temporary csv table in the database
-    utf8_csv_file = csv_file.parent / 'utf8_{}'.format(csv_file.name)
-    parse_encoding(csv_file, 'cp1251', utf8_csv_file, 'utf-8')
-
     try:
-        copy_csv(cur, tmp_table, schema, utf8_csv_file, 'utf-8')
+        copy_csv(cur, tmp_table, schema, csv_file, 'latin1')
     except psycopg2.DataError:
         conn.rollback()
         print('Could not read data from file', str(csv_file))
@@ -456,7 +442,10 @@ def update_history(conn,
                    stadsdeel,
                    date,
                    columns='*'):
-    """
+    """Copy data from :param:`tmp_table` to :param:`hist_table`. First all data
+    with the same :param:`stadsdeel` and :param:`date` is deleted from
+    :param:`hist_table`. After that new data is inserted.
+
     :type conn: psycopg2.extensions.connection
     :type cur: psycopg2.extensions.connection
     :type tmp_table: str
@@ -508,10 +497,12 @@ def update_history(conn,
 
 
 def create_partition(conn, cur, table, schema, stadsdeel):
-    """
+    """Create a partition for a :param:`stadsdeel` if it not already exists.
+
     :type conn: psycopg2.extensions.connection
     :type cur: psycopg2.extensions.connection
     :type table: str
+    :param table: The table name on which a new partition should be created.
     :type schema: str
     :type stadsdeel: str
     :rtype: str
@@ -540,7 +531,8 @@ def create_partition(conn, cur, table, schema, stadsdeel):
 
 
 def drop_table(conn, cur, table, schema):
-    """
+    """Drop a table.
+
     :type conn: psycopg2.extensions.connection
     :type cur: psycopg2.extensions.connection
     :type table: str
@@ -561,7 +553,8 @@ def drop_table(conn, cur, table, schema):
 
 
 def table_exists(conn, cur, table, schema):
-    """
+    """Check if a table exists.
+
     :type conn: psycopg2.extensions.connection
     :type cur: psycopg2.extensions.connection
     :type table: str
@@ -585,7 +578,12 @@ def table_exists(conn, cur, table, schema):
 
 
 def create_hist_table(conn, cur, table, schema, force_drop=False):
-    """
+    """Create the history table for shape files. This table should contain all
+    data from all shape files that have been imported. The table is also
+    partitioned according to `stadsdeel` and if a certain shapefile is imported
+    with a stadsdeel and request data that is already imported, this data is
+    deleted and the new shapefile is inserted.
+
     :type conn: psycopg2.extensions.connection
     :type cur: psycopg2.extensions.connection
     :type table: str
@@ -769,7 +767,11 @@ def initialize_database(database,
                         tmp_csv_table='s_csv_parkeervakken',
                         hist_csv_table='h_csv_parkeervakken',
                         schema='public'):
-    """
+    """Setup the temporary and history tables in the database. If they already
+    exist the creation of the table is skipped, unless :param:`force_drop` is
+    true. In that case the tables are dropped if they exist and new tables are
+    created. This also means that any data in a history table is lost.
+
     :type database: str
     :type schema: str
     :type hist_table: str
