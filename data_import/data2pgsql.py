@@ -1,13 +1,10 @@
 import subprocess
-import traceback
 import argparse
 import re
 import zipfile
 import shutil
 import shlex
 import pathlib
-
-import yaml
 
 import psycopg2
 
@@ -27,9 +24,89 @@ def setup_argparse():
 
     parser = argparse.ArgumentParser(description=parser_description)
 
-    parser.add_argument('--config',
+    parser.add_argument('--schema',
+                        dest='schema',
+                        default='public',
+                        required=False,
+                        help="The schema name where all the tables are found")
+
+    parser.add_argument('--history-table',
+                        dest='history_table',
+                        default='h_parkeervakken',
+                        required=False,
+                        help=("This is the name of the table to which data "
+                              "from the connection layer is written to. It is "
+                              "a history table, containing the data from "
+                              "shape files."))
+
+    parser.add_argument('--history-csv-table',
+                        dest='history_csv_table',
+                        default='h_csv_parkeervakken',
+                        required=False,
+                        help=("This is the name of the table to which data "
+                              "from the connection layer is written to. It is "
+                              "a history table, containing the data from csv "
+                              "files."))
+
+    parser.add_argument('--temporary-table',
+                        dest='temporary_table',
+                        default='s_parkeervakken',
+                        required=False,
+                        help=("This is the name of the table in the "
+                              "connection layer for data read from shape "
+                              "files. This table is temporary and is cleaned "
+                              "before a new file is imported."))
+
+    parser.add_argument('--temporary-csv-table',
+                        dest='temporary_csv_table',
+                        default='s_csv_parkeervakken',
+                        required=False,
+                        help=("This is the name of the table in the "
+                              "connection layer for data read from csv "
+                              "files. Thie table is temporary and is cleaned "
+                              "before a new file is imported."))
+
+    parser.add_argument('--source',
+                        dest='source',
                         type=pathlib.Path,
-                        help='The filename for the configuration')
+                        required=True,
+                        help='The path where zip-files are resided')
+
+    parser.add_argument('--target',
+                        dest='target',
+                        type=pathlib.Path,
+                        default=None,
+                        required=False,
+                        help="""The target directory to where zip files should
+                        be unzipped. If the target is not given or the path is
+                        the same as the target path, it will be changed to
+                        <source_path>/tmp""")
+
+    parser.add_argument('--database', '-db',
+                        dest='database',
+                        required=True,
+                        help='The name of the database')
+
+    parser.add_argument('--user', '-U',
+                        dest='user',
+                        help='The database username')
+
+    parser.add_argument('--password', '-W',
+                        dest='password',
+                        help='The password of the database user')
+
+    parser.add_argument('--host', '-H',
+                        dest='host',
+                        default='localhost',
+                        required=False,
+                        help='The host where the database is resided')
+
+    parser.add_argument('--port', '-P',
+                        dest='port',
+                        default=5432,
+                        type=int,
+                        required=False,
+                        help='The port of the database')
 
     subparsers = parser.add_subparsers()
 
@@ -130,8 +207,30 @@ def import_data(database,
     conn.close()
 
 
-def copy_csv(cur, table, schema, csv_file, encoding):
+def parse_encoding(src, src_encoding, dest, dest_encoding):
+    """Change the encoding of a file.
+
+    :type src: pathlib.Path
+    :param src: The source file of which the encoding should be changed.
+    :type src_encoding: str
+    :param src_encoding: The encoding of the source file, for example utf-8 or
+    latin1.
+    :type dest: pathlib.Path
+    :param dest: The filename to which the new file should be written.
+    :type dest_encoding: str
+    :param dest_encoding: The encoding to which :param:`src` should be changed
+    into, for example latin1 or cp1252.
     """
+
+    with src.open(encoding=src_encoding) as f_src, \
+            dest.open(encoding=dest_encoding, mode='w') as f_dest:
+        data = f_src.read()
+        f_dest.write(data)
+
+
+def copy_csv(cur, table, schema, csv_file, encoding):
+    """Copy a csv file into a database.
+
     :type cur: psycopg2.extensions.connection
     :type table: str
     :type schema: str
@@ -139,8 +238,6 @@ def copy_csv(cur, table, schema, csv_file, encoding):
     """
 
     with csv_file.open(encoding=encoding) as f:
-        if encoding.startswith('cp'):
-            encoding = 'WIN{}'.format(encoding[2:])
         copy_stmt = """COPY {schema}.{table} FROM STDIN
         WITH (
             FORMAT csv,
@@ -164,12 +261,21 @@ def import_zip_data(zip_file,
                     hist_csv_table,
                     tmp_csv_table,
                     tmp_table):
-    """
+    """Unzip all data in :param:`zip_file` and load the shape and csv files.
+
     :type conn: psycopg2.extensions.connection
     :type cur: psycopg2.extensions.connection
     :type zip_file: pathlib.Path
-    :type target: patrhlib.Path
+    :param zip_file: The path to where the zip file is resided on disk.
+    :type target: pathlib.Path
+    :param target: The target path to which data from the zipfile should be
+    unzipped. Note that the target directory is first cleaned so the target
+    can't be the same as :param:`zip_file`. This is handled by changing the
+    target to `<target>/tmp`.
     """
+
+    if str(zip_file) == str(target):
+        target = target / 'tmp'
 
     clean_directory(target)
 
@@ -318,16 +424,17 @@ def load_csv_file(conn, cur, tmp_table, hist_table, schema, csv_file):
         raise
 
     # Load csv file into temporary csv table in the database
+    utf8_csv_file = csv_file.parent / 'utf8_{}'.format(csv_file.name)
+    parse_encoding(csv_file, 'cp1251', utf8_csv_file, 'utf-8')
+
     try:
-        copy_csv(cur, tmp_table, schema, csv_file, 'cp1252')
+        copy_csv(cur, tmp_table, schema, utf8_csv_file, 'utf-8')
     except psycopg2.DataError:
         conn.rollback()
-        print('Skipping', csv_file)
-        traceback.print_exc()
-        return
+        print('Could not read data from file', str(csv_file))
     except Exception:
         conn.rollback()
-        print('Could not read data for file', str(csv_file))
+        print('Could not read data from file', str(csv_file))
         conn.close()
         raise
 
@@ -705,25 +812,21 @@ def initialize_database(database,
 def main():
     args = setup_argparse()
 
-    config_file = args.config
     command = args.command
 
-    with config_file.open() as f:
-        config = yaml.load(f.read())
-
     database_credentials = {
-        'database': config['database'],
-        'user': config['user'],
-        'password': config['password'],
-        'host': config['host'],
-        'port': config['port'],
+        'database': args.database,
+        'user': args.user,
+        'password': args.password,
+        'host': args.host,
+        'port': args.port,
     }
 
-    hist_table = config.get('history_table', 'h_parkeervakken')
-    tmp_table = config.get('temporary_table', 's_parkeervakken')
-    hist_csv_table = config.get('history_csv_table', 'h_csv_parkeervakken')
-    tmp_csv_table = config.get('temporary_csv_table', 's_csv_parkeervakken')
-    schema = config.get('schema', 'public')
+    hist_table = args.history_table
+    tmp_table = args.temporary_table
+    hist_csv_table = args.history_csv_table
+    tmp_csv_table = args.temporary_csv_table
+    schema = args.schema
 
     if command == 'init':
         force_drop = args.force_drop
@@ -734,8 +837,8 @@ def main():
                             force_drop=force_drop,
                             **database_credentials)
     elif command == 'update':
-        source = pathlib.Path(config['source'])
-        target = config.get('target', None)
+        source = pathlib.Path(args.source)
+        target = args.target
 
         target = (
             pathlib.Path(target)
