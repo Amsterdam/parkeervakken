@@ -1,4 +1,5 @@
 import subprocess
+import datetime
 import argparse
 import re
 import zipfile
@@ -9,6 +10,7 @@ import pathlib
 import psycopg2
 
 
+# The way file names are expected to be.
 stadsdeel_c = re.compile(r'^(?P<stadsdeel>[a-zA-Z-]*)_parkeerhaven.*_'
                          r'(?P<date>[0-9]{8})$')
 
@@ -16,11 +18,11 @@ stadsdeel_c = re.compile(r'^(?P<stadsdeel>[a-zA-Z-]*)_parkeerhaven.*_'
 def setup_argparse():
     """Setup argument parser for command line options. It also includes a
     subparser to differentiate between initializing the tables in the database
-    and importing data from shape and csv files.
+    and importing data from shape files.
     """
 
     parser_description = """Either setup tables in a database for loading shape
-    and csv files or load data into the tables."""
+    files or load data into the tables."""
 
     parser = argparse.ArgumentParser(description=parser_description)
 
@@ -29,6 +31,16 @@ def setup_argparse():
                         default='public',
                         required=False,
                         help="The schema name where all the tables are found")
+
+    parser.add_argument('--parking-table',
+                        dest='park_table',
+                        default='parkeervakken',
+                        required=False)
+
+    parser.add_argument('--reservation-table',
+                        dest='res_table',
+                        default='reserveringen',
+                        required=False)
 
     parser.add_argument('--history-table',
                         dest='history_table',
@@ -39,15 +51,6 @@ def setup_argparse():
                               "a history table, containing the data from "
                               "shape files."))
 
-    parser.add_argument('--history-csv-table',
-                        dest='history_csv_table',
-                        default='h_csv_parkeervakken',
-                        required=False,
-                        help=("This is the name of the table to which data "
-                              "from the connection layer is written to. It is "
-                              "a history table, containing the data from csv "
-                              "files."))
-
     parser.add_argument('--temporary-table',
                         dest='temporary_table',
                         default='s_parkeervakken',
@@ -57,30 +60,10 @@ def setup_argparse():
                               "files. This table is temporary and is cleaned "
                               "before a new file is imported."))
 
-    parser.add_argument('--temporary-csv-table',
-                        dest='temporary_csv_table',
-                        default='s_csv_parkeervakken',
-                        required=False,
-                        help=("This is the name of the table in the "
-                              "connection layer for data read from csv "
-                              "files. Thie table is temporary and is cleaned "
-                              "before a new file is imported."))
-
-    parser.add_argument('--source',
-                        dest='source',
-                        type=pathlib.Path,
-                        required=True,
-                        help='The path where zip-files are resided')
-
-    parser.add_argument('--target',
-                        dest='target',
-                        type=pathlib.Path,
-                        default=None,
-                        required=False,
-                        help="""The target directory to where zip files should
-                        be unzipped. If the target is not given or the path is
-                        the same as the target path, it will be changed to
-                        <source_path>/tmp""")
+    parser.add_argument('--date-table',
+                        dest='date_table',
+                        default='datums',
+                        required=False)
 
     parser.add_argument('--database', '-db',
                         dest='database',
@@ -110,12 +93,12 @@ def setup_argparse():
 
     subparsers = parser.add_subparsers()
 
-    init_description = """Initialize the tables in a database. The structure
-    consists of 2 layers, the first layer has a table where data from csv files
-    are temporarily stored. The other table is dropped for each new shape file
-    that is loaded. The second layer is a history layer containing 2 tables.
-    One for data read from csv files and one for shape data. The tables are
-    partioned on "stadsdeel"."""
+    init_description = ('Initialize the tables in a database. The structure '
+                        'consists of 2 layers, the table in the first layer,'
+                        'is dropped for each new shape file that is loaded. '
+                        'The second layer is a history layer containing 1 '
+                        'table. This contains data from all the loaded shape '
+                        'files. This table is partioned on "stadsdeel".')
 
     init_parser = subparsers.add_parser('initialize', help=init_description)
     init_parser.add_argument('--force-drop',
@@ -127,6 +110,42 @@ def setup_argparse():
     update_parser = subparsers.add_parser('update')
     update_parser.set_defaults(command='update')
 
+    update_parser.add_argument('--source',
+                               dest='source',
+                               type=pathlib.Path,
+                               required=True,
+                               help='The path where zip-files are resided')
+
+    update_parser.add_argument('--target',
+                               dest='target',
+                               type=pathlib.Path,
+                               default=None,
+                               required=False,
+                               help=("The target directory to where zip files "
+                                     "should be unzipped. If the target is "
+                                     "not given or the path is the same as "
+                                     "the target path, it will be changed to "
+                                     "<source_path>/tmp"))
+
+    update_parser.add_argument('--skip-import',
+                               dest='skip_import',
+                               default=False,
+                               action='store_true')
+
+    update_parser.add_argument('--skip-dates',
+                               dest='skip_dates',
+                               default=False,
+                               action='store_true')
+
+    update_parser.add_argument('--skip-parking',
+                               dest='skip_parking',
+                               default=False,
+                               action='store_true')
+
+    update_parser.add_argument('--skip-reservations',
+                               dest='skip_reservations',
+                               default=False,
+                               action='store_true')
     return parser.parse_args()
 
 
@@ -151,15 +170,19 @@ def import_data(database,
                 target=None,
                 schema='public',
                 hist_table='h_parkeervakken',
-                hist_csv_table='h_csv_parkeervakken',
                 tmp_table='s_parkeervakken',
-                tmp_csv_table='s_csv_parkeervakken'):
+                park_table='parkeervakken',
+                res_table='reserveringen',
+                date_table='datums',
+                skip_import=False,
+                skip_dates=False,
+                skip_parking=False,
+                skip_reservations=False):
     """Load data from zip files given in :param:`source` into the database.
     These zip files should consist of shape files and files connected to the
-    shape files. Furthermore it should also contain csv files. The data in
-    these csv and shape files contains data about reservations of parking
-    spaces. There should be files for each `stadsdeel` (city part), but it
-    doesn't matter if a `stadsdeel` is ommitted.
+    shape files. The data in shape files contains data about reservations of
+    parking spaces. There should be files for each `stadsdeel` (city part), but
+    it doesn't matter if a `stadsdeel` is ommitted.
 
     :type database: str
     :type user: str
@@ -170,9 +193,14 @@ def import_data(database,
     :type target: pathlib.Path
     :type schema: str
     :type hist_table: str
-    :type hist_csv_table: str
     :type tmp_table: str
-    :type tmp_csv_table: str
+    :type park_table: str
+    :type res_table: str
+    :type date_table: str
+    :type skip_import: bool
+    :type skip_dates: bool
+    :type skip_parking: bool
+    :type skip_reservations: bool
     """
 
     source = source.absolute()
@@ -190,45 +218,33 @@ def import_data(database,
 
     cur = conn.cursor()
 
-    for f in source.iterdir():
-        if f.suffix != '.zip':
-            continue
+    if not skip_import:
+        for f in source.iterdir():
+            if f.suffix != '.zip':
+                continue
 
-        import_zip_data(f,
-                        conn,
-                        cur,
-                        target,
-                        schema,
-                        hist_table,
-                        hist_csv_table,
-                        tmp_csv_table,
-                        tmp_table)
+            import_zip_data(f,
+                            conn,
+                            cur,
+                            target,
+                            schema,
+                            hist_table,
+                            tmp_table)
 
+    if not skip_dates:
+        update_dates(conn, cur, date_table, hist_table, schema)
+
+    if not skip_parking:
+        update_parking_spaces(conn, cur, hist_table, park_table, schema)
+
+    if not skip_reservations:
+        update_reservations(conn,
+                            cur,
+                            hist_table,
+                            res_table,
+                            date_table,
+                            schema)
     conn.close()
-
-
-def copy_csv(cur, table, schema, csv_file, encoding):
-    """Copy a csv file into a database.
-
-    :type cur: psycopg2.extensions.connection
-    :type table: str
-    :type schema: str
-    :type csv_file: pathlib.Path
-    """
-
-    with csv_file.open(encoding=encoding) as f:
-        copy_stmt = """COPY {schema}.{table} FROM STDIN
-        WITH (
-            FORMAT csv,
-            HEADER TRUE,
-            DELIMITER ';',
-            QUOTE '"',
-            ENCODING '{encoding}',
-            NULL ''
-        )
-        """.format(schema=schema, table=table, encoding=encoding.upper())
-
-        cur.copy_expert(copy_stmt, f)
 
 
 def import_zip_data(zip_file,
@@ -237,10 +253,8 @@ def import_zip_data(zip_file,
                     target,
                     schema,
                     hist_table,
-                    hist_csv_table,
-                    tmp_csv_table,
                     tmp_table):
-    """Unzip all data in :param:`zip_file` and load the shape and csv files.
+    """Unzip all data in :param:`zip_file` and load the shape files.
 
     :type conn: psycopg2.extensions.connection
     :type cur: psycopg2.extensions.connection
@@ -263,14 +277,6 @@ def import_zip_data(zip_file,
 
     for shp_file in target.glob('*.shp'):
         load_shape_file(conn, cur, tmp_table, hist_table, schema, shp_file)
-
-    for csv_file in target.glob('*.csv'):
-        load_csv_file(conn,
-                      cur,
-                      tmp_csv_table,
-                      hist_csv_table,
-                      schema,
-                      csv_file)
 
 
 def load_shape_file(conn, cur, tmp_table, hist_table, schema, shp_file):
@@ -302,7 +308,12 @@ def load_shape_file(conn, cur, tmp_table, hist_table, schema, shp_file):
         # TODO
         raise Exception
 
-    stadsdeel, date = match.groups()
+    stadsdeel, date_string = match.groups()
+
+    try:
+        date = datetime.datetime.strptime(date_string, '%Y%m%d')
+    except Exception:
+        date = None
 
     if stadsdeel == '':
         stadsdeel = 'unknown'
@@ -366,6 +377,7 @@ def load_shape_file(conn, cur, tmp_table, hist_table, schema, shp_file):
         "tvm_opmerk",
         "geom",
     )
+
     update_history(conn,
                    cur,
                    tmp_table,
@@ -374,64 +386,6 @@ def load_shape_file(conn, cur, tmp_table, hist_table, schema, shp_file):
                    stadsdeel,
                    date,
                    columns)
-
-
-def load_csv_file(conn, cur, tmp_table, hist_table, schema, csv_file):
-    """
-    :type conn: psycopg2.extensions.connection
-    :type cur: psycopg2.extensions.connection
-    :type tmp_table: str
-    :type hist_table: str
-    :type schema: str
-    :type csv_file: pathlib.Path
-    """
-
-    match = stadsdeel_c.match(csv_file.stem)
-
-    if match is None:
-        conn.close()
-
-        # TODO
-        raise Exception
-
-    stadsdeel, date = match.groups()
-
-    if stadsdeel == '':
-        stadsdeel = 'unknown'
-
-    stadsdeel = stadsdeel.lower().replace('-', '_')
-
-    # Truncate csv file
-    truncate_csv = """TRUNCATE {schema}.{table}""".format(schema=schema,
-                                                          table=tmp_table)
-
-    try:
-        cur.execute(truncate_csv)
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        conn.close()
-        raise
-
-    try:
-        copy_csv(cur, tmp_table, schema, csv_file, 'latin1')
-    except psycopg2.DataError:
-        conn.rollback()
-        print('Could not read data from file', str(csv_file))
-    except Exception:
-        conn.rollback()
-        print('Could not read data from file', str(csv_file))
-        conn.close()
-        raise
-
-    # Update date from the temporary csv table into the csv history table
-    update_history(conn,
-                   cur,
-                   tmp_table,
-                   hist_table,
-                   schema,
-                   stadsdeel,
-                   date)
 
 
 def update_history(conn,
@@ -470,8 +424,8 @@ def update_history(conn,
 
     # First delete data from the history table before inserting new data
     delete_stmt = """DELETE FROM {schema}.{hist_table}
-    WHERE aanvraag_datum = %(date)s""".format(schema=schema,
-                                              hist_table=partition_table)
+    WHERE goedkeurings_datum = %(date)s""".format(schema=schema,
+                                                  hist_table=partition_table)
 
     try:
         cur.execute(delete_stmt, {'date': date})
@@ -482,7 +436,10 @@ def update_history(conn,
 
     # Insert data from the temporary table into the history table
     insert_stmt = """INSERT INTO {schema}.{hist_table}
-    SELECT {columns}, %(stadsdeel)s AS stadsdeel, %(date)s AS aanvraag_datum
+    SELECT
+        {columns},
+        %(stadsdeel)s AS stadsdeel,
+        %(date)s AS goedkeurings_datum
     FROM {schema}.{tmp_table}""".format(schema=schema,
                                         hist_table=partition_table,
                                         columns=columns,
@@ -494,6 +451,403 @@ def update_history(conn,
     except Exception:
         conn.close()
         raise
+
+
+def update_dates(conn,
+                 cur,
+                 date_table,
+                 hist_table,
+                 schema,
+                 interval='20 year'):
+    """
+
+    :type conn: psycopg2.extensions.connection
+    :type cur: psycopg2.extensions.connection
+    :type date_table: str
+    :type hist_table: str
+    :type schema: str
+    """
+
+    truncate = "TRUNCATE {schema}.{date_table}".format(schema=schema,
+                                                       date_table=date_table)
+
+    try:
+        cur.execute(truncate)
+        conn.commit()
+    except Exception:
+        conn.close()
+        raise
+
+    insert = """INSERT INTO {schema}.{date_table}
+    SELECT datum, date_part('dow', datum)
+    FROM (
+        SELECT
+            generate_series(min_date, max_date, interval '1d') as datum
+        FROM (
+            SELECT
+                min(goedkeurings_datum) AS min_date,
+                max(goedkeurings_datum) + interval %(interval)s AS max_date
+            FROM {schema}.{hist_table}
+        ) AS u
+    ) as t
+    """.format(schema=schema,
+               date_table=date_table,
+               hist_table=hist_table)
+
+    try:
+        cur.execute(insert, {'interval': interval})
+        conn.commit()
+    except Exception:
+        conn.close()
+        raise
+
+
+def update_parking_spaces(conn,
+                          cur,
+                          hist_table,
+                          park_table,
+                          schema):
+    """
+
+    :type conn: psycopg2.extensions.connection
+    :type cur: psycopg2.extensions.connection
+    :type hist_table: str
+    :type park_table: str
+    :type schema: str
+    """
+
+    truncate = "TRUNCATE {schema}.{park_table}".format(schema=schema,
+                                                       park_table=park_table)
+
+    try:
+        cur.execute(truncate)
+        conn.commit()
+    except Exception:
+        conn.close()
+        raise
+
+    insert = """INSERT INTO {schema}.{park_table}
+    SELECT
+        t.parkeer_id,
+        t.buurtcode,
+        t.straatnaam,
+        t."type",
+        t.aantal,
+        last_t.laatste_update,
+        stadsdeel,
+        geom
+    FROM {schema}.{hist_table} as t
+    INNER JOIN (
+        SELECT
+            parkeer_id,
+            MAX(goedkeurings_datum) AS laatste_update
+        FROM {schema}.{hist_table}
+        GROUP BY parkeer_id
+    ) AS last_t
+        ON t.parkeer_id = last_t.parkeer_id AND
+           t.goedkeurings_datum = last_t.laatste_update
+    """.format(schema=schema, hist_table=hist_table, park_table=park_table)
+
+    try:
+        cur.execute(insert)
+        conn.commit()
+    except Exception:
+        conn.close()
+        raise
+
+
+def update_fiscal_reservations(conn,
+                               cur,
+                               hist_table,
+                               res_table,
+                               date_table,
+                               schema):
+    """
+
+    :type conn: psycopg2.extensions.connection
+    :type cur: psycopg2.extensions.connection
+    :type hist_table: str
+    :type res_table: str
+    :type date_table: str
+    :type schema: str
+    """
+
+    insert = """INSERT INTO {schema}.{res_table}
+    SELECT DISTINCT ON (parkeer_id, reserverings_datum, begintijd)
+        parkeer_id,
+        soort,
+        dates.datum AS reserverings_datum,
+        CASE WHEN tvm_begind = datum
+                THEN begintijd
+             ELSE '00:00:00'::time
+        END AS begintijd,
+        CASE WHEN tvm_eindd = datum
+                THEN eindtijd
+             ELSE '24:00:00'::time
+        END AS eindtijd,
+        NULL AS kenteken,
+        NULL AS e_type,
+        NULL AS bord,
+        opmerkingen
+    FROM {schema}.{date_table} AS dates
+    INNER JOIN (
+        SELECT
+            parkeer_id,
+            soort,
+            CASE tvm_begint ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$'
+                WHEN TRUE THEN replace(tvm_begint, ';', ':')::time
+                ELSE '00:00:00'::time
+            END AS begintijd,
+            CASE tvm_eindt ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$'
+                WHEN TRUE THEN replace(tvm_eindt, ';', ':')::time
+                ELSE '00:00:00'::time
+            END AS eindtijd,
+            tvm_opmerk AS opmerkingen,
+            tvm_begind,
+            tvm_eindd
+        FROM {schema}.{hist_table}
+        WHERE tvm_begint ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$' AND
+              tvm_eindt ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$' AND
+              soort = 'FISCAAL' AND
+              tvm_begind <= tvm_eindd
+    ) AS reserverings_tijden
+        ON reserverings_tijden.tvm_begind <= dates.datum AND
+           dates.datum <= reserverings_tijden.tvm_eindd
+    WHERE reserverings_tijden.tvm_begind != reserverings_tijden.tvm_eindd OR
+          reserverings_tijden.begintijd <= reserverings_tijden.eindtijd
+    """.format(schema=schema,
+               hist_table=hist_table,
+               res_table=res_table,
+               date_table=date_table)
+
+    try:
+        cur.execute(insert)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        conn.close()
+        raise
+
+
+def update_mulder_reservations(conn,
+                               cur,
+                               hist_table,
+                               res_table,
+                               date_table,
+                               schema):
+    """
+
+    :type conn: psycopg2.extensions.connection
+    :type cur: psycopg2.extensions.connection
+    :type hist_table: str
+    :type res_table: str
+    :type date_table: str
+    :type schema: str
+    """
+
+    mulder_select_approval_dates = """SELECT
+        parkeer_id,
+        soort,
+        CASE begintijd1 ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$'
+             WHEN TRUE THEN replace(begintijd1, ';', ':')::time
+             ELSE '00:00:00'::time
+        END AS begintijd,
+        CASE eindtijd1 ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$'
+             WHEN TRUE THEN replace(eindtijd1, ';', ':')::time
+             ELSE '00:00:00'::time
+        END AS eindtijd,
+        ma_vr,
+        ma_za,
+        zo,
+        ma,
+        di,
+        wo,
+        "do",
+        vr,
+        za,
+        kenteken,
+        e_type,
+        bord,
+        opmerking,
+        max(goedkeurings_datum) as goedkeuring
+    FROM {schema}.{hist_table}
+    WHERE (begintijd1 ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$' OR
+           begintijd1 = '' OR begintijd1 IS NULL) AND
+          (eindtijd1 ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$' OR
+           eindtijd1 = '' OR eindtijd1 IS NULL) AND
+            soort = 'MULDER'
+    GROUP BY
+        parkeer_id,
+        soort,
+        begintijd1,
+        eindtijd1,
+        ma_vr,
+        ma_za,
+        zo,
+        ma,
+        di,
+        wo,
+        "do",
+        vr,
+        za,
+        kenteken,
+        e_type,
+        bord,
+        opmerking
+    UNION ALL
+    SELECT
+        parkeer_id,
+        soort,
+        CASE begintijd2 ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$'
+             WHEN TRUE THEN replace(begintijd2, ';', ':')::time
+             ELSE '00:00:00'::time
+        END AS begintijd,
+        CASE eindtijd2 ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$'
+             WHEN TRUE THEN replace(eindtijd2, ';', ':')::time
+             ELSE '00:00:00'::time
+        END AS eindtijd,
+        ma_vr,
+        ma_za,
+        zo,
+        ma,
+        di,
+        wo,
+        "do",
+        vr,
+        za,
+        kenteken,
+        e_type,
+        bord,
+        opmerking,
+        max(goedkeurings_datum) as goedkeuring
+    FROM {schema}.{hist_table}
+    WHERE begintijd2 ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$' AND
+          eindtijd2 ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$' AND
+          soort = 'MULDER'
+    GROUP BY
+        parkeer_id,
+        soort,
+        begintijd2,
+        eindtijd2,
+        ma_vr,
+        ma_za,
+        zo,
+        ma,
+        di,
+        wo,
+        "do",
+        vr,
+        za,
+        kenteken,
+        e_type,
+        bord,
+        opmerking
+    """.format(schema=schema, hist_table=hist_table)
+
+    mulder_insert = """INSERT INTO {schema}.{res_table}
+    SELECT
+        reserverings_tijden.parkeer_id,
+        reserverings_tijden.soort,
+        dates.datum,
+        reserverings_tijden.begintijd,
+        reserverings_tijden.eindtijd,
+        reserverings_tijden.kenteken,
+        reserverings_tijden.e_type,
+        reserverings_tijden.bord,
+        reserverings_tijden.opmerking
+    FROM {schema}.{date_table} AS dates
+    INNER JOIN (
+        SELECT *
+        FROM ({approval_dates}) as t, (
+            SELECT max(goedkeurings_datum) AS laatste_goedkeuring
+            FROM {schema}.{hist_table}
+        ) AS s
+        WHERE begintijd <= eindtijd
+    ) AS reserverings_tijden
+        ON ((reserverings_tijden.ma_vr AND dates.dag >= 1 AND dates.dag <= 5)
+            OR
+            (reserverings_tijden.ma_za AND dates.dag >= 1 AND dates.dag <= 6)
+            OR
+            (reserverings_tijden.zo AND dates.dag = 0)
+            OR
+            (reserverings_tijden.ma AND dates.dag = 1)
+            OR
+            (reserverings_tijden.di AND dates.dag = 2)
+            OR
+            (reserverings_tijden.wo AND dates.dag = 3)
+            OR
+            (reserverings_tijden."do" AND dates.dag = 4)
+            OR
+            (reserverings_tijden.vr AND dates.dag = 5)
+            OR
+            (reserverings_tijden.za AND dates.dag = 6)
+            OR
+            (NOT reserverings_tijden.ma_vr AND
+             NOT reserverings_tijden.ma_za AND
+             NOT reserverings_tijden.zo AND
+             NOT reserverings_tijden.ma AND
+             NOT reserverings_tijden.di AND
+             NOT reserverings_tijden.wo AND
+             NOT reserverings_tijden."do" AND
+             NOT reserverings_tijden.vr AND
+             NOT reserverings_tijden.za)
+            ) AND
+           laatste_goedkeuring <= goedkeuring AND
+           dates.datum >= goedkeuring
+    """.format(schema=schema,
+               res_table=res_table,
+               hist_table=hist_table,
+               date_table=date_table,
+               approval_dates=mulder_select_approval_dates)
+
+    try:
+        cur.execute(mulder_insert)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        conn.close()
+        raise
+
+
+def update_reservations(conn,
+                        cur,
+                        hist_table,
+                        res_table,
+                        date_table,
+                        schema):
+    """
+
+    :type conn: psycopg2.extensions.connection
+    :type cur: psycopg2.extensions.connection
+    :type hist_table: str
+    :type res_table: str
+    :type date_table: str
+    :type schema: str
+    """
+
+    truncate = "TRUNCATE {schema}.{res_table}".format(schema=schema,
+                                                      res_table=res_table)
+
+    try:
+        cur.execute(truncate)
+        conn.commit()
+    except Exception:
+        conn.close()
+        raise
+
+    update_fiscal_reservations(conn,
+                               cur,
+                               hist_table,
+                               res_table,
+                               date_table,
+                               schema)
+
+    update_mulder_reservations(conn,
+                               cur,
+                               hist_table,
+                               res_table,
+                               date_table,
+                               schema)
 
 
 def create_partition(conn, cur, table, schema, stadsdeel):
@@ -577,6 +931,84 @@ def table_exists(conn, cur, table, schema):
     return len(results) > 0
 
 
+def create_parking_space_table(conn, cur, table, schema, force_drop=False):
+    """
+
+    :type conn: psycopg2.extensions.connection
+    :type cur: psycopg2.extensions.connection
+    :type table: str
+    :type schema: str
+    :type force_drop: bool
+    """
+
+    if force_drop:
+        drop_table(conn, cur, table, schema)
+    elif table_exists(conn, cur, table, schema):
+        return
+
+    create_table = """CREATE TABLE IF NOT EXISTS {schema}.{table} (
+    "parkeer_id" varchar(10),
+    "buurtcode" varchar(20),
+    "straatnaam" varchar(40),
+    "type" varchar(20),
+    "aantal" numeric(10,0),
+    "laatste_update" timestamp without time zone,
+    "stadsdeel" varchar(40),
+    PRIMARY KEY (parkeer_id)
+    );
+    SELECT AddGeometryColumn(%(schema)s,%(table)s,'geom','0','MULTIPOLYGON',2);
+    """.format(schema=schema, table=table)
+
+    try:
+        cur.execute(create_table, {'schema': schema, 'table': table})
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        conn.close()
+        raise
+
+
+def create_parking_reservation_table(conn,
+                                     cur,
+                                     table,
+                                     schema,
+                                     force_drop=False):
+    """
+
+    :type conn: psycopg2.extensions.connection
+    :type cur: psycopg2.extensions.connection
+    :type table: str
+    :type schema: str
+    :type force_drop: bool
+    """
+
+    if force_drop:
+        drop_table(conn, cur, table, schema)
+    elif table_exists(conn, cur, table, schema):
+        return
+
+    create_table = """CREATE TABLE IF NOT EXISTS {schema}.{table} (
+    "parkeer_id" varchar(10),
+    "soort" varchar(20),
+    "reserverings_datum" timestamp without time zone,
+    "begintijd" time without time zone,
+    "eindtijd" time without time zone,
+    "kenteken" varchar(20),
+    "e_type" varchar(5),
+    "bord" varchar(50),
+    "opmerkingen" varchar(100),
+    PRIMARY KEY(parkeer_id, reserverings_datum, begintijd)
+    );""".format(schema=schema, table=table)
+
+    try:
+        cur.execute(create_table, {'schema': schema, 'table': table})
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        conn.close()
+        raise
+
+
 def create_hist_table(conn, cur, table, schema, force_drop=False):
     """Create the history table for shape files. This table should contain all
     data from all shape files that have been imported. The table is also
@@ -629,9 +1061,9 @@ def create_hist_table(conn, cur, table, schema, force_drop=False):
     SELECT AddGeometryColumn(%(schema)s,%(table)s,'geom','0','MULTIPOLYGON',2);
     ALTER TABLE "{schema}"."{table}"
         ADD COLUMN "stadsdeel" varchar(40),
-        ADD COLUMN "aanvraag_datum" varchar(40);
+        ADD COLUMN "goedkeurings_datum" timestamp without time zone;
     ALTER TABLE "{schema}"."{table}"
-        ADD PRIMARY KEY (parkeer_id, aanvraag_datum);
+        ADD PRIMARY KEY (parkeer_id, goedkeurings_datum);
     """.format(schema=schema, table=table)
 
     try:
@@ -643,8 +1075,9 @@ def create_hist_table(conn, cur, table, schema, force_drop=False):
         raise
 
 
-def create_hist_csv_table(conn, cur, table, schema, force_drop=False):
+def create_date_table(conn, cur, table, schema, force_drop=False):
     """
+
     :type conn: psycopg2.extensions.connection
     :type cur: psycopg2.extensions.connection
     :type table: str
@@ -657,99 +1090,14 @@ def create_hist_csv_table(conn, cur, table, schema, force_drop=False):
     elif table_exists(conn, cur, table, schema):
         return
 
-    create_csv_table = """CREATE TABLE IF NOT EXISTS {schema}.{csv} (
-        "parkeer_id" varchar(10),
-        "buurtcode" varchar(20),
-        "straatnaam" varchar(40),
-        "x" varchar(10),
-        "y" varchar(10),
-        "soort" varchar(20),
-        "type" varchar(20),
-        "aantal" varchar(20),
-        "kenteken" varchar(20),
-        "e_type" varchar(5),
-        "bord" varchar(50),
-        "begintijd1" varchar(20),
-        "eindtijd1" varchar(20),
-        "ma_vr" varchar(10),
-        "ma_za" varchar(10),
-        "zo" varchar(10),
-        "ma" varchar(10),
-        "di" varchar(10),
-        "wo" varchar(10),
-        "do" varchar(10),
-        "vr" varchar(10),
-        "za" varchar(10),
-        "eindtijd2" varchar(20),
-        "begintijd2" varchar(20),
-        "opmerking" varchar(100),
-        "tvm_begind" varchar(30),
-        "tvm_eindd" varchar(30),
-        "tvm_begint" varchar(20),
-        "tvm_eindt" varchar(20),
-        "tvm_opmerk" varchar(100),
-        "stadsdeel" varchar(40),
-        "aanvraag_datum" varchar(10)
-    )""".format(schema=schema, csv=table)
+    create_table = """CREATE TABLE IF NOT EXISTS {schema}.{table} (
+        datum timestamp without time zone,
+        dag int,
+        PRIMARY KEY (datum, dag)
+    )""".format(schema=schema, table=table)
 
     try:
-        cur.execute(create_csv_table, {'schema': schema, 'table': table})
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        conn.close()
-        raise
-
-
-def create_tmp_csv_table(conn, cur, table, schema, force_drop=False):
-    """
-    :type conn: psycopg2.extensions.connection
-    :type cur: psycopg2.extensions.connection
-    :type table: str
-    :type schema: str
-    :type force_drop: bool
-    """
-
-    if force_drop:
-        drop_table(conn, cur, table, schema)
-    elif table_exists(conn, cur, table, schema):
-        return
-
-    create_csv_table = """CREATE TABLE IF NOT EXISTS {schema}.{csv} (
-        "parkeer_id" varchar(10),
-        "buurtcode" varchar(20),
-        "straatnaam" varchar(40),
-        "x" varchar(10),
-        "y" varchar(10),
-        "soort" varchar(20),
-        "type" varchar(20),
-        "aantal" varchar(20),
-        "kenteken" varchar(20),
-        "e_type" varchar(5),
-        "bord" varchar(50),
-        "begintijd1" varchar(20),
-        "eindtijd1" varchar(20),
-        "ma_vr" varchar(10),
-        "ma_za" varchar(10),
-        "zo" varchar(10),
-        "ma" varchar(10),
-        "di" varchar(10),
-        "wo" varchar(10),
-        "do" varchar(10),
-        "vr" varchar(10),
-        "za" varchar(10),
-        "eindtijd2" varchar(20),
-        "begintijd2" varchar(20),
-        "opmerking" varchar(100),
-        "tvm_begind" varchar(30),
-        "tvm_eindd" varchar(30),
-        "tvm_begint" varchar(20),
-        "tvm_eindt" varchar(20),
-        "tvm_opmerk" varchar(100)
-    )""".format(schema=schema, csv=table)
-
-    try:
-        cur.execute(create_csv_table, {'schema': schema, 'table': table})
+        cur.execute(create_table, {'schema': schema, 'table': table})
         conn.commit()
     except Exception:
         conn.rollback()
@@ -764,8 +1112,9 @@ def initialize_database(database,
                         port,
                         force_drop=False,
                         hist_table='h_parkeervakken',
-                        tmp_csv_table='s_csv_parkeervakken',
-                        hist_csv_table='h_csv_parkeervakken',
+                        park_table='parkeervakken',
+                        res_table='reserveringen',
+                        date_table='datums',
                         schema='public'):
     """Setup the temporary and history tables in the database. If they already
     exist the creation of the table is skipped, unless :param:`force_drop` is
@@ -775,9 +1124,9 @@ def initialize_database(database,
     :type database: str
     :type schema: str
     :type hist_table: str
-    :type hist_table: str
-    :type hist_csv_table: str
-    :type csv_tmp_table: str
+    :type park_table: str
+    :type res_table: str
+    :type date_table: str
     :type user: str
     :type password: str
     :type host: str
@@ -788,8 +1137,6 @@ def initialize_database(database,
 
     tables = [
         hist_table,
-        tmp_csv_table,
-        hist_csv_table,
     ]
 
     for table in tables:
@@ -807,8 +1154,9 @@ def initialize_database(database,
     cur = conn.cursor()
 
     create_hist_table(conn, cur, hist_table, schema, force_drop)
-    create_tmp_csv_table(conn, cur, tmp_csv_table, schema, force_drop)
-    create_hist_csv_table(conn, cur, hist_csv_table, schema, force_drop)
+    create_parking_space_table(conn, cur, park_table, schema, force_drop)
+    create_parking_reservation_table(conn, cur, res_table, schema, force_drop)
+    create_date_table(conn, cur, date_table, schema, force_drop)
 
 
 def main():
@@ -826,21 +1174,26 @@ def main():
 
     hist_table = args.history_table
     tmp_table = args.temporary_table
-    hist_csv_table = args.history_csv_table
-    tmp_csv_table = args.temporary_csv_table
+    park_table = args.park_table
+    res_table = args.res_table
+    date_table = args.date_table
     schema = args.schema
 
     if command == 'init':
         force_drop = args.force_drop
         initialize_database(hist_table=hist_table,
-                            tmp_csv_table=tmp_csv_table,
-                            hist_csv_table=hist_csv_table,
+                            park_table=park_table,
+                            res_table=res_table,
                             schema=schema,
                             force_drop=force_drop,
                             **database_credentials)
     elif command == 'update':
         source = pathlib.Path(args.source)
         target = args.target
+        skip_import = args.skip_import
+        skip_parking = args.skip_parking
+        skip_reservations = args.skip_reservations
+        skip_dates = args.skip_dates
 
         target = (
             pathlib.Path(target)
@@ -850,11 +1203,16 @@ def main():
 
         import_data(hist_table=hist_table,
                     tmp_table=tmp_table,
-                    hist_csv_table=hist_csv_table,
-                    tmp_csv_table=tmp_csv_table,
+                    park_table=park_table,
+                    res_table=res_table,
+                    date_table=date_table,
                     schema=schema,
                     source=source,
                     target=target,
+                    skip_import=skip_import,
+                    skip_dates=skip_dates,
+                    skip_parking=skip_parking,
+                    skip_reservations=skip_reservations,
                     **database_credentials)
 
 
