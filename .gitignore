@@ -194,3 +194,7 @@ Global/NetBeans.gitignore
 # Apache Avro
 avro_files/
 *.avro
+
+docker/
+parkeervakken/
+data_import/

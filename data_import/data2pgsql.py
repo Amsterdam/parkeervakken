@@ -30,17 +30,22 @@ def setup_argparse():
                         dest='schema',
                         default='public',
                         required=False,
-                        help="The schema name where all the tables are found")
+                        help=("The schema name where all the tables are "
+                              "found. Default is public."))
 
     parser.add_argument('--parking-table',
                         dest='park_table',
                         default='parkeervakken',
-                        required=False)
+                        required=False,
+                        help=("The table where static parking data like "
+                              "geometry and 'stadsdeel' reside."))
 
     parser.add_argument('--reservation-table',
                         dest='res_table',
                         default='reserveringen',
-                        required=False)
+                        required=False,
+                        help=("Table containing the dates of when a parking "
+                              "place has been reserved"))
 
     parser.add_argument('--history-table',
                         dest='history_table',
@@ -63,7 +68,9 @@ def setup_argparse():
     parser.add_argument('--date-table',
                         dest='date_table',
                         default='datums',
-                        required=False)
+                        required=False,
+                        help=("Table containing dates, this is only used "
+                              "internally for easy joins."))
 
     parser.add_argument('--database', '-db',
                         dest='database',
@@ -610,6 +617,27 @@ def update_fiscal_reservations(conn,
               tvm_eindt ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$' AND
               soort = 'FISCAAL' AND
               tvm_begind <= tvm_eindd
+        UNION ALL
+        SELECT
+            parkeer_id,
+            'FISCAAL',
+            CASE tvm_begint ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$'
+                WHEN TRUE THEN replace(tvm_begint, ';', ':')::time
+                ELSE '00:00:00'::time
+            END AS begintijd,
+            CASE tvm_eindt ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$'
+                WHEN TRUE THEN replace(tvm_eindt, ';', ':')::time
+                ELSE '00:00:00'::time
+            END AS eindtijd,
+            tvm_opmerk AS opmerkingen,
+            tvm_begind,
+            tvm_eindd
+        FROM {schema}.{hist_table}
+        WHERE tvm_begint ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$' AND
+              tvm_eindt ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$' AND
+              soort = 'MULDER' AND
+              tvm_begind <= tvm_eindd AND
+              tvm_begind IS NOT NULL
     ) AS reserverings_tijden
         ON reserverings_tijden.tvm_begind <= dates.datum AND
            dates.datum <= reserverings_tijden.tvm_eindd
@@ -997,7 +1025,7 @@ def create_parking_reservation_table(conn,
     "e_type" varchar(5),
     "bord" varchar(50),
     "opmerkingen" varchar(100),
-    PRIMARY KEY(parkeer_id, reserverings_datum, begintijd)
+    PRIMARY KEY(parkeer_id, reserverings_datum, begintijd, soort)
     );""".format(schema=schema, table=table)
 
     try:
