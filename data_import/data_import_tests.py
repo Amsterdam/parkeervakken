@@ -125,8 +125,6 @@ class TestImport(TestCase):
             conn.close()
             raise
 
-        # TODO create tables
-
     def test_create_partitioning(self):
         table = 'h_parkeervakken'
         schema = 'public'
