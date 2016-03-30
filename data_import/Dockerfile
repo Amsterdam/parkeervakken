@@ -15,4 +15,7 @@ RUN chmod +x /import.sh
 RUN pip3.5 install -r /requirements.txt \
     && rm /requirements.txt
 
+RUN apt-get update \
+    && apt-get install -y postgis
+
 CMD ["/import.sh"]
