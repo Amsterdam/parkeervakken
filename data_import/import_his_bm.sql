@@ -9,7 +9,11 @@ INSERT INTO bm.parkeervakken
     straatnaam,
     "type",
     aantal,
+    e_type,
+    bord,
+
     geom
+
 )
 SELECT DISTINCT ON (parkeer_id)
     md5(parkeer_id),
@@ -19,6 +23,10 @@ SELECT DISTINCT ON (parkeer_id)
     straatnaam,
     "type",
     aantal,
+
+    e_type,
+    bord,
+
     geom
 FROM his.parkeervakken;
 
@@ -148,8 +156,6 @@ INSERT INTO bm.reserveringen_mulder
     parkeer_id_md5,
     soort,
     kenteken,
-    e_type,
-    bord,
     reserverings_datum,
     begin_tijd,
     eind_tijd,
@@ -167,8 +173,6 @@ SELECT
     reserverings_tijden.parkeer_id_md5,
     'MULDER',
     reserverings_tijden.kenteken,
-    reserverings_tijden.e_type,
-    reserverings_tijden.bord,
     bm.datums.datum,
     reserverings_tijden.begin_tijd,
     reserverings_tijden.eind_tijd,
@@ -180,8 +184,6 @@ INNER JOIN (
         md5(parkeer_id) AS parkeer_id_md5,
         soort,
         kenteken,
-        e_type,
-        bord,
         opmerking AS opmerkingen,
         CASE begintijd1 ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$'
             WHEN TRUE THEN replace(begintijd1, ';', ':')::time
@@ -209,8 +211,6 @@ INNER JOIN (
         md5(parkeer_id) AS parkeer_id_md5,
         soort,
         kenteken,
-        e_type,
-        bord,
         opmerking AS opmerkingen,
         CASE begintijd2 ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$'
             WHEN TRUE THEN replace(begintijd2, ';', ':')::time
@@ -275,8 +275,6 @@ INSERT INTO bm.reserveringen_mulder_schoon
     "parkeer_id_md5",
     "soort",
     "kenteken",
-    "e_type",
-    "bord",
     "reserverings_datum",
     "begin_datum",
     "eind_datum",
@@ -298,8 +296,6 @@ INSERT INTO bm.reserveringen_mulder_schoon
     "parkeer_id_md5",
     "soort",
     "kenteken",
-    "e_type",
-    "bord",
     "reserverings_datum",
     "begin_datum",
     "eind_datum",
@@ -319,8 +315,6 @@ SELECT
     mulder.parkeer_id_md5,
     mulder.soort,
     mulder.kenteken,
-    mulder.e_type,
-    mulder.bord,
     mulder.reserverings_datum,
     mulder.begin_datum,
     mulder.eind_datum,
@@ -342,8 +336,6 @@ INSERT INTO bm.reserveringen_mulder_schoon
     "parkeer_id_md5",
     "soort",
     "kenteken",
-    "e_type",
-    "bord",
     "reserverings_datum",
     "begin_datum",
     "eind_datum",
@@ -363,8 +355,6 @@ SELECT
     mulder.parkeer_id_md5,
     mulder.soort,
     mulder.kenteken,
-    mulder.e_type,
-    mulder.bord,
     mulder.reserverings_datum,
     mulder.begin_datum,
     mulder.eind_datum,
@@ -387,8 +377,6 @@ INSERT INTO bm.reserveringen_mulder_schoon
     "parkeer_id_md5",
     "soort",
     "kenteken",
-    "e_type",
-    "bord",
     "reserverings_datum",
     "begin_datum",
     "eind_datum",
@@ -408,8 +396,7 @@ SELECT
     a.parkeer_id_md5,
     a.soort,
     a.kenteken,
-    a.e_type,
-    a.bord,
+
     a.reserverings_datum,
     a.begin_datum,
     a.eind_datum,
@@ -422,8 +409,7 @@ FROM (
         mulder.parkeer_id_md5,
         mulder.soort,
         mulder.kenteken,
-        mulder.e_type,
-        mulder.bord,
+
         mulder.reserverings_datum,
         mulder.begin_datum,
         mulder.eind_datum,

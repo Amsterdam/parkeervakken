@@ -39,13 +39,18 @@ SELECT
   pv.straatnaam                                              AS straatnaam,
   pv.aantal                                                  AS aantal,
   pv.geom                                                    AS geometrie,
-  re.e_type                                                  AS e_type,
-  re.bord                                                    AS bord,
+
+  pv.e_type                                                  AS e_type,
+  (CASE WHEN pv.e_type = 'E6b' THEN null ELSE pv.bord END)   AS bord,
+
   re.begin_datum                                             AS begin_datum,
-  re.eind_datum                                              AS eind_datum
+  re.eind_datum                                              AS eind_datum,
+  re.soort                                                   AS soort,
+  re.opmerkingen                                             AS opmerkingen,
+  re.reserverings_datum                                      AS day
 FROM bv.parkeervakken pv
 LEFT JOIN bv.reserveringen re
-ON pv.parkeer_id=re.parkeer_id and reserverings_datum=current_date
+ON pv.parkeer_id_md5=re.parkeer_id_md5 and reserverings_datum=current_date
 """,
         ),
 

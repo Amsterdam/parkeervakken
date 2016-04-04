@@ -13,7 +13,11 @@ CREATE TABLE bv.parkeervakken (
     "buurtcode" varchar(20),
     "straatnaam" varchar(40),
     "type" varchar(20),
-    "aantal" numeric(10,0)
+    "aantal" numeric(10,0),
+
+    "e_type" varchar(5),
+    "bord" varchar(50)
+
 );
 
 SELECT AddGeometryColumn('bv','parkeervakken','geom','0','MULTIPOLYGON',2);
@@ -24,8 +28,7 @@ CREATE TABLE IF NOT EXISTS bv.reserveringen (
     "parkeer_id" varchar(10),
     "soort" varchar(20),
     "kenteken" varchar(20) DEFAULT NULL,
-    "e_type" varchar(5) DEFAULT NULL,
-    "bord" varchar(50) DEFAULT NULL,
+
     "reserverings_datum" date,
     "begin_datum" date DEFAULT NULL,
     "eind_datum" date DEFAULT NULL,

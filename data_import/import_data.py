@@ -212,6 +212,7 @@ def import_shape_data(source, latest_date, conn, cur):
             continue
 
         print('Load', shp_file)
+
         load_shape_file(conn, cur, shp_file)
 
 

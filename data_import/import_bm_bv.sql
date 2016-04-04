@@ -12,6 +12,10 @@ INSERT INTO bv.parkeervakken
     straatnaam,
     "type",
     aantal,
+
+    e_type,
+    bord,
+
     geom
 )
 SELECT
@@ -27,8 +31,7 @@ INSERT INTO bv.reserveringen
     parkeer_id_md5,
     soort,
     kenteken,
-    e_type,
-    bord,
+
     reserverings_datum,
     begin_datum,
     eind_datum,
@@ -47,8 +50,7 @@ INSERT INTO bv.reserveringen
     parkeer_id_md5,
     soort,
     kenteken,
-    e_type,
-    bord,
+
     reserverings_datum,
     begin_datum,
     eind_datum,
