@@ -2,7 +2,7 @@
 
 CREATE SCHEMA IF NOT EXISTS bm;
 
-DROP TABLE IF EXISTS bm.parkeervakken;
+-- DROP TABLE IF EXISTS bm.parkeervakken;
 
 CREATE TABLE IF NOT EXISTS bm.parkeervakken (
     "parkeer_id_md5" text PRIMARY KEY,
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS bm.parkeervakken (
 
 SELECT AddGeometryColumn('bm','parkeervakken','geom','0','MULTIPOLYGON',2);
 
-DROP TABLE IF EXISTS bm.reserveringen_fiscaal;
+-- DROP TABLE IF EXISTS bm.reserveringen_fiscaal;
 
 CREATE TABLE IF NOT EXISTS bm.reserveringen_fiscaal (
     "reserverings_key_md5" text PRIMARY KEY,
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS bm.reserveringen_fiscaal (
     "opmerkingen" varchar(100)
 );
 
-DROP TABLE IF EXISTS bm.reserveringen_mulder;
+-- DROP TABLE IF EXISTS bm.reserveringen_mulder;
 
 CREATE TABLE IF NOT EXISTS bm.reserveringen_mulder (
     "reserverings_key_md5" text PRIMARY KEY,
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS bm.reserveringen_mulder (
     "opmerkingen" varchar(100)
 );
 
-DROP TABLE IF EXISTS bm.reserveringen_mulder_schoon;
+-- DROP TABLE IF EXISTS bm.reserveringen_mulder_schoon;
 
 CREATE TABLE IF NOT EXISTS bm.reserveringen_mulder_schoon (
     "reserverings_key_md5" text PRIMARY KEY,
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS bm.reserveringen_mulder_schoon (
     "opmerkingen" varchar(100)
 );
 
-DROP TABLE IF EXISTS bm.datums;
+-- DROP TABLE IF EXISTS bm.datums;
 
 CREATE TABLE IF NOT EXISTS bm.datums (
     "datum" date,

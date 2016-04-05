@@ -1,21 +1,36 @@
 FROM python:3.5
+MAINTAINER datapunt@amsterdam.nl
 
-COPY import_data.py /import_data.py
-COPY create_his_tables.sql /create_his_tables.sql
-COPY create_bm_tables.sql /create_bm_tables.sql
-COPY create_bv_tables.sql /create_bv_tables.sql
-COPY update_his.sql /update_his.sql
-COPY import_his_bm.sql /import_his_bm.sql
-COPY import_bm_bv.sql /import_bm_bv.sql
-COPY import.sh /import.sh
-COPY requirements.txt /requirements.txt
+ENV PYTHONUNBUFFERED 1
 
-RUN chmod +x /import.sh
+WORKDIR /app
 
-RUN pip3.5 install -r /requirements.txt \
-    && rm /requirements.txt
+COPY import_data.py        /app/import_data.py
+COPY create_his_tables.sql /app/create_his_tables.sql
+COPY create_bm_tables.sql  /app/create_bm_tables.sql
+COPY create_bv_tables.sql  /app/create_bv_tables.sql
+COPY update_his.sql        /app/update_his.sql
+COPY import_his_bm.sql     /app/import_his_bm.sql
+COPY import_bm_bv.sql      /app/import_bm_bv.sql
+COPY import.sh             /app/import.sh
+COPY requirements.txt      /app/requirements.txt
 
-RUN apt-get update \
-    && apt-get install -y postgis
+#RUN chmod +x /import.sh
 
-CMD ["/import.sh"]
+RUN apt-get update && \
+	apt-get install -y libgeos-dev && \
+        apt-get install -y postgis && \
+	adduser --system datapunt && \
+	mkdir -p /static && \
+	chown datapunt /static && \
+	pip install uwsgi
+
+#RUN apt-get update \
+#    && apt-get install -y postgis
+
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+
+CMD /app/docker-entrypoint.sh

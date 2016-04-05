@@ -2,7 +2,7 @@
 
 CREATE SCHEMA IF NOT EXISTS his;
 
-DROP TABLE IF EXISTS his.parkeervakken;
+-- DROP TABLE IF EXISTS his.parkeervakken;
 
 CREATE TABLE his.parkeervakken (
     "parkeervak_id_md5" text PRIMARY KEY,

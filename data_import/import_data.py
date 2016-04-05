@@ -69,10 +69,12 @@ def setup_argparse():
                         'files. This table is partioned on "stadsdeel".')
 
     init_parser = subparsers.add_parser('initialize', help=init_description)
+
     init_parser.add_argument('--force-drop',
                              action='store_true',
                              default=False,
                              help="Drop tables if they already exist")
+
     init_parser.set_defaults(command='init')
 
     update_parser = subparsers.add_parser('update')
