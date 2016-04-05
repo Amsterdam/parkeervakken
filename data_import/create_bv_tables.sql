@@ -2,9 +2,9 @@
 
 CREATE SCHEMA IF NOT EXISTS bv;
 
--- DROP TABLE IF EXISTS bv.reserveringen;
+DROP TABLE IF EXISTS bv.reserveringen CASCADE;
 
--- DROP TABLE IF EXISTS bv.parkeervakken;
+DROP TABLE IF EXISTS bv.parkeervakken CASCADE;
 
 CREATE TABLE bv.parkeervakken (
     "parkeer_id_md5" text PRIMARY KEY,
