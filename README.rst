@@ -1,6 +1,15 @@
 
-Installation
-============
+Docker Installation
+===================
+
+::
+   docker-compose build
+   docker-compose up
+
+
+Manual Installation
+===================
+
 
  1. Create a parkeervakken database.
 
@@ -22,8 +31,8 @@ Load the data
     python3 import_data.py --user postgres --password insecure --host 127.0.0.1 --port 5409 --database parkeervakken update  --source PWD
 
 
-The data pipeline
-=================
+The data pipeline overview
+==========================
 
  1. Raw shapafiles get loaded in the 'his' schema.
 
