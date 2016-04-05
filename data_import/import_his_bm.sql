@@ -343,6 +343,7 @@ INSERT INTO bm.reserveringen_mulder_schoon
     "eind_tijd",
     "opmerkingen"
 )
+
 SELECT
     md5(concat(
         mulder.parkeer_id,
@@ -370,56 +371,56 @@ WHERE mulder.begin_tijd >= fiscaal.begin_tijd AND
       mulder.eind_tijd > fiscaal.eind_tijd;
 
 
-INSERT INTO bm.reserveringen_mulder_schoon
-(
-    "reserverings_key_md5",
-    "parkeer_id",
-    "parkeer_id_md5",
-    "soort",
-    "kenteken",
-    "reserverings_datum",
-    "begin_datum",
-    "eind_datum",
-    "begin_tijd",
-    "eind_tijd",
-    "opmerkingen"
-)
-SELECT
-    md5(concat(
-        a.parkeer_id,
-        '-',
-        a.reserverings_datum,
-        '-',
-        a.begin_tijd
-    )),
-    a.parkeer_id,
-    a.parkeer_id_md5,
-    a.soort,
-    a.kenteken,
-
-    a.reserverings_datum,
-    a.begin_datum,
-    a.eind_datum,
-    a.begin_tijd,
-    a.eind_tijd,
-    a.opmerkingen
-FROM (
-    SELECT
-        mulder.parkeer_id,
-        mulder.parkeer_id_md5,
-        mulder.soort,
-        mulder.kenteken,
-
-        mulder.reserverings_datum,
-        mulder.begin_datum,
-        mulder.eind_datum,
-        unnest(ARRAY[mulder.begin_tijd, fiscaal.eind_tijd]::time without time zone[]) AS begin_tijd,
-        unnest(ARRAY[fiscaal.begin_tijd, mulder.eind_tijd]::time without time zone[]) AS eind_tijd,
-        mulder.opmerkingen
-    FROM bm.reserveringen_mulder AS mulder
-    INNER JOIN bm.reserveringen_fiscaal AS fiscaal
-        ON mulder.parkeer_id_md5 = fiscaal.parkeer_id_md5 AND
-        mulder.reserverings_datum = fiscaal.reserverings_datum
-    WHERE mulder.begin_tijd < fiscaal.begin_tijd AND
-        mulder.eind_tijd > fiscaal.eind_tijd
-) AS a;
+--INSERT INTO bm.reserveringen_mulder_schoon
+--(
+--    "reserverings_key_md5",
+--    "parkeer_id",
+--    "parkeer_id_md5",
+--    "soort",
+--    "kenteken",
+--    "reserverings_datum",
+--    "begin_datum",
+--    "eind_datum",
+--    "begin_tijd",
+--    "eind_tijd",
+--    "opmerkingen"
+--)
+--SELECT
+--    md5(concat(
+--        a.parkeer_id,
+--        '-',
+--        a.reserverings_datum,
+--        '-',
+--        a.begin_tijd
+--    )),
+--    a.parkeer_id,
+--    a.parkeer_id_md5,
+--    a.soort,
+--    a.kenteken,
+--
+--    a.reserverings_datum,
+--    a.begin_datum,
+--    a.eind_datum,
+--    a.begin_tijd,
+--    a.eind_tijd,
+--    a.opmerkingen
+--FROM (
+--    SELECT
+--        mulder.parkeer_id,
+--        mulder.parkeer_id_md5,
+--        mulder.soort,
+--        mulder.kenteken,
+--
+--        mulder.reserverings_datum,
+--        mulder.begin_datum,
+--        mulder.eind_datum,
+--        unnest(ARRAY[mulder.begin_tijd, fiscaal.eind_tijd]::time without time zone[]) AS begin_tijd,
+--        unnest(ARRAY[fiscaal.begin_tijd, mulder.eind_tijd]::time without time zone[]) AS eind_tijd,
+--        mulder.opmerkingen
+--    FROM bm.reserveringen_mulder AS mulder
+--    INNER JOIN bm.reserveringen_fiscaal AS fiscaal
+--        ON mulder.parkeer_id_md5 = fiscaal.parkeer_id_md5 AND
+--        mulder.reserverings_datum = fiscaal.reserverings_datum
+--    WHERE mulder.begin_tijd < fiscaal.begin_tijd AND
+--        mulder.eind_tijd > fiscaal.eind_tijd
+--) AS a;

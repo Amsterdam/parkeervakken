@@ -107,7 +107,7 @@ def setup_argparse():
                                action='store_true')
     update_parser.add_argument('--interval',
                                dest='interval',
-                               default='1 year')
+                               default='5 days')
     return parser.parse_args()
 
 
@@ -404,7 +404,7 @@ def update_history(conn, cur, stadsdeel, date):
         raise
 
 
-def update_dates(conn, cur, interval='1 year'):
+def update_dates(conn, cur, interval='1 day'):
     """
 
     :type conn: psycopg2.extensions.connection
