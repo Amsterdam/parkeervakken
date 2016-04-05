@@ -13,6 +13,7 @@ COPY update_his.sql        /app/update_his.sql
 COPY import_his_bm.sql     /app/import_his_bm.sql
 COPY import_bm_bv.sql      /app/import_bm_bv.sql
 COPY import.sh             /app/import.sh
+COPY docker-wait.sh        /app/import.sh
 COPY requirements.txt      /app/requirements.txt
 
 #RUN chmod +x /import.sh

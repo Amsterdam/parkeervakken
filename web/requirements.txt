@@ -1,0 +1,5 @@
+Django==1.9.4
+django-extensions==1.6.1
+django-jenkins==0.18.1
+psycopg2==2.6.1
+six==1.10.0

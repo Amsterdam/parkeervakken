@@ -95,8 +95,8 @@ DATABASES = {
             'options': '-c search_path=bv,public'
         },
         'PASSWORD': os.getenv('DB_PASSWORD', 'insecure'),
-        'HOST': os.getenv('DATABASE_PORT_5432_TCP_ADDR', '127.0.0.1'),
-        'PORT': os.getenv('DATABASE_PORT_5432_TCP_PORT', '5409'),
+        'HOST': os.getenv('PARKEERVAKKEN_DB_PORT_5432_TCP_ADDR', '127.0.0.1'),
+        'PORT': os.getenv('PARKEERVAKKEN_DB_PORT_5432_TCP_PORT', '5409'),
     }
 }
 
