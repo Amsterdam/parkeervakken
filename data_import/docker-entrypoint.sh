@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+set -u
+
 # wait for database to load
 source docker-wait.sh
 
