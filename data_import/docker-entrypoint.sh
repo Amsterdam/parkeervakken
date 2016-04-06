@@ -1,12 +1,9 @@
 #!/bin/bash
 
-set -e
-set -u
-
 # wait for database to load
 source docker-wait.sh
 
-#unzip $(ls -Art data/*.zip | tail -n 1) -d /app/unzipped/
+unzip $(ls -Art data/*.zip | tail -n 1) -d /app/unzipped/
 
 
 # clear and or create tables
