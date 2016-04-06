@@ -162,38 +162,23 @@ def import_data(database,
                             host=host,
                             port=port)
 
-    cur = conn.cursor()
+    with conn.cursor() as cur:
 
-    if not skip_import:
-        latest_date = find_latest_date(source, 'shp')
+        if not skip_import:
+            latest_date = find_latest_date(source, 'shp')
 
-        import_shape_data(source, latest_date, conn, cur)
+            import_shape_data(source, latest_date, conn, cur)
 
-    if not skip_dates:
-        update_dates(conn, cur, interval)
+        if not skip_dates:
+            update_dates(conn, cur, interval)
 
-    with open('import_his_bm.sql') as f:
-        stmts = f.read()
+    files = [
+        'import_his_bm.sql',
+        'import_bm_bv.sql',
+    ]
 
-    try:
-        cur.execute(stmts)
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        conn.close()
-        raise
-
-    with open('import_bm_bv.sql') as f:
-        stmts = f.read()
-
-    try:
-        cur.execute(stmts)
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        conn.close()
-        raise
-    conn.close()
+    for filename in files:
+        execute_sql(conn, filename)
 
 
 def import_shape_data(source, latest_date, conn, cur):
