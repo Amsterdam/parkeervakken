@@ -1,4 +1,4 @@
-CREATE VIEW geo_parkeervakken AS
+CREATE VIEW bv.geo_parkeervakken AS
 
   SELECT
     pv.parkeer_id      AS id,
@@ -16,7 +16,7 @@ CREATE VIEW geo_parkeervakken AS
     pv.geom            AS geometrie
   FROM bv.parkeervakken pv;
 
-CREATE VIEW geo_parkeervakken_reserveringen AS
+CREATE VIEW bv.geo_parkeervakken_reserveringen AS
 
   SELECT
     pv.parkeer_id         AS id,
