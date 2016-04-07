@@ -1,11 +1,16 @@
 #!/bin/bash
 
+set -e
+set -u
+
 # wait for database to load
 source docker-wait.sh
 
+echo 'unzipping latest source shape file'
+
 unzip $(ls -Art data/*.zip | tail -n 1) -d /app/unzipped/
 
-
+echo 'clear / build tables'
 # clear and or create tables
 python import_data.py --user $PARKEERVAKKEN_DB_USER \
 		      --password $PARKEERVAKKEN_DB_PASSWORD \
@@ -14,6 +19,7 @@ python import_data.py --user $PARKEERVAKKEN_DB_USER \
 		      --database parkeervakken \
                       initialize
 
+echo 'load parkeer data'
 # run import / update data
 python import_data.py --user $PARKEERVAKKEN_DB_USER \
 		      --password $PARKEERVAKKEN_DB_PASSWORD \
@@ -22,3 +28,5 @@ python import_data.py --user $PARKEERVAKKEN_DB_USER \
 		      --database parkeervakken \
                       update \
                       --source /app/unzipped
+
+echo 'parkeerdata DONE'

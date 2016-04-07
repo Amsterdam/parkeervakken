@@ -162,38 +162,23 @@ def import_data(database,
                             host=host,
                             port=port)
 
-    cur = conn.cursor()
+    with conn.cursor() as cur:
 
-    if not skip_import:
-        latest_date = find_latest_date(source, 'shp')
+        if not skip_import:
+            latest_date = find_latest_date(source, 'shp')
 
-        import_shape_data(source, latest_date, conn, cur)
+            import_shape_data(source, latest_date, conn, cur)
 
-    if not skip_dates:
-        update_dates(conn, cur, interval)
+        if not skip_dates:
+            update_dates(conn, cur, interval)
 
-    with open('import_his_bm.sql') as f:
-        stmts = f.read()
+    files = [
+        'import_his_bm.sql',
+        'import_bm_bv.sql',
+    ]
 
-    try:
-        cur.execute(stmts)
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        conn.close()
-        raise
-
-    with open('import_bm_bv.sql') as f:
-        stmts = f.read()
-
-    try:
-        cur.execute(stmts)
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        conn.close()
-        raise
-    conn.close()
+    for filename in files:
+        execute_sql(conn, filename)
 
 
 def import_shape_data(source, latest_date, conn, cur):
@@ -539,40 +524,33 @@ def create_tables(database, user, password, host, port):
                             host=host,
                             port=port)
 
-    cur = conn.cursor()
+    files = [
+        'create_his_tables.sql',
+        'create_bm_tables.sql',
+        'create_bv_tables.sql',
+        'create_views.sql',
+    ]
 
-    with open('create_his_tables.sql') as f:
+    for filename in files:
+        execute_sql(conn, filename)
+
+
+def execute_sql(conn, filename):
+    """
+    :type conn: a Connection object
+    :type filename: str
+    """
+    with open(filename) as f:
         stmts = f.read()
 
-    try:
-        cur.execute(stmts)
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        conn.close()
-        raise
-
-    with open('create_bm_tables.sql') as f:
-        stmts = f.read()
-
-    try:
-        cur.execute(stmts)
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        conn.close()
-        raise
-
-    with open('create_bv_tables.sql') as f:
-        stmts = f.read()
-
-    try:
-        cur.execute(stmts)
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        conn.close()
-        raise
+        try:
+            with conn.cursor() as c:
+                c.execute(stmts)
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            conn.close()
+            raise
 
 
 def main():
