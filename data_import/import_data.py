@@ -107,7 +107,7 @@ def setup_argparse():
                                action='store_true')
     update_parser.add_argument('--interval',
                                dest='interval',
-                               default='5 days')
+                               default='15 days')
     return parser.parse_args()
 
 
