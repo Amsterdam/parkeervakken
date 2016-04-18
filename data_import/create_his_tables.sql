@@ -1,5 +1,7 @@
 -- Create history layer
 
+CREATE EXTENSION IF NOT EXISTS postgis;
+
 CREATE SCHEMA IF NOT EXISTS his;
 
 DROP TABLE IF EXISTS his.parkeervakken CASCADE;
