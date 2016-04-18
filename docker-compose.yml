@@ -9,12 +9,8 @@ database:
 
 import:
   build: ./data_import
-#  ports:
-#    - "8101:8000"
   links:
     - database:parkeervakken_db
-#  volumes:
-#    - $PWD/reports:/app/reports
   environment:
     PARKEERVAKKEN_DB_NAME: parkeervakken
     PARKEERVAKKEN_DB_USER: postgres
