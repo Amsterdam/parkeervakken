@@ -16,7 +16,7 @@ INSERT INTO bm.parkeervakken
 
 )
 SELECT DISTINCT ON (parkeer_id)
-    md5(parkeer_id),
+    parkeer_id,
     parkeer_id,
     stadsdeel,
     buurtcode,
@@ -46,13 +46,15 @@ INSERT INTO bm.reserveringen_fiscaal
     opmerkingen
 )
 SELECT
-    md5(concat(
+    concat(
         reserverings_tijden.parkeer_id,
         '-',
         bm.datums.datum,
         '-',
-        reserverings_tijden.begin_tijd
-    )),
+        reserverings_tijden.begin_tijd,
+        '-',
+        reserverings_tijden.eind_tijd
+    ),
     reserverings_tijden.parkeer_id,
     reserverings_tijden.parkeer_id_md5,
     'FISCAAL',
@@ -66,7 +68,7 @@ FROM bm.datums
 INNER JOIN (
     SELECT
         parkeer_id,
-        md5(parkeer_id) AS parkeer_id_md5,
+        parkeer_id AS parkeer_id_md5,
         soort,
         CASE tvm_begint ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$'
             WHEN TRUE THEN replace(tvm_begint, ';', ':')::time
@@ -104,13 +106,15 @@ INSERT INTO bm.reserveringen_fiscaal
     opmerkingen
 )
 SELECT
-    md5(concat(
+    concat(
         reserverings_tijden.parkeer_id,
         '-',
         bm.datums.datum,
         '-',
-        reserverings_tijden.begin_tijd
-    )),
+        reserverings_tijden.begin_tijd,
+        '-',
+        reserverings_tijden.eind_tijd
+    ),
     reserverings_tijden.parkeer_id,
     reserverings_tijden.parkeer_id_md5,
     'FISCAAL',
@@ -124,7 +128,7 @@ FROM bm.datums
 INNER JOIN (
     SELECT
         parkeer_id,
-        md5(parkeer_id) AS parkeer_id_md5,
+        parkeer_id AS parkeer_id_md5,
         soort,
         CASE tvm_begint ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$'
             WHEN TRUE THEN replace(tvm_begint, ';', ':')::time
@@ -162,13 +166,19 @@ INSERT INTO bm.reserveringen_mulder
     opmerkingen
 )
 SELECT
-    md5(concat(
+    concat(
         reserverings_tijden.parkeer_id,
         '-',
         bm.datums.datum,
-        '-',
-        reserverings_tijden.begin_tijd
-    )),
+        'BT:',
+        reserverings_tijden.begin_tijd,
+        'EIND:',
+        reserverings_tijden.eind_tijd,
+        'OPMRK:',
+        reserverings_tijden.opmerkingen,
+        'GK:',
+        reserverings_tijden.goedkeurings_datum
+    ),
     reserverings_tijden.parkeer_id,
     reserverings_tijden.parkeer_id_md5,
     'MULDER',
@@ -181,7 +191,7 @@ FROM bm.datums
 INNER JOIN (
     SELECT
         parkeer_id,
-        md5(parkeer_id) AS parkeer_id_md5,
+        parkeer_id AS parkeer_id_md5,
         soort,
         kenteken,
         opmerking AS opmerkingen,
@@ -208,7 +218,7 @@ INNER JOIN (
     UNION ALL
     SELECT
         parkeer_id,
-        md5(parkeer_id) AS parkeer_id_md5,
+        parkeer_id AS parkeer_id_md5,
         soort,
         kenteken,
         opmerking AS opmerkingen,
@@ -304,13 +314,15 @@ INSERT INTO bm.reserveringen_mulder_schoon
     "opmerkingen"
 )
 SELECT
-    md5(concat(
+    concat(
         mulder.parkeer_id,
         '-',
         mulder.reserverings_datum,
         '-',
-        mulder.begin_tijd
-    )),
+        mulder.begin_tijd,
+        '-',
+        mulder.eind_tijd
+    ),
     mulder.parkeer_id,
     mulder.parkeer_id_md5,
     mulder.soort,
@@ -345,13 +357,15 @@ INSERT INTO bm.reserveringen_mulder_schoon
 )
 
 SELECT
-    md5(concat(
+    concat(
         mulder.parkeer_id,
         '-',
         mulder.reserverings_datum,
         '-',
+        fiscaal.begin_tijd,
+        '-',
         fiscaal.eind_tijd
-    )),
+    ),
     mulder.parkeer_id,
     mulder.parkeer_id_md5,
     mulder.soort,
@@ -392,8 +406,9 @@ SELECT
         a.reserverings_datum,
         '-',
         a.begin_tijd,
-	'-',
-        a.eind_tijd
+	    '*',
+        a.eind_tijd,
+        '-'
     ),
     a.parkeer_id,
     a.parkeer_id_md5,

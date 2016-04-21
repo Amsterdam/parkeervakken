@@ -8,7 +8,10 @@ import shlex
 import pathlib
 
 import psycopg2
+import logging
 
+
+log = logging.getLogger(__name__)
 
 # The way file names are expected to be.
 stadsdeel_c = re.compile(r'^(?P<stadsdeel>[a-zA-Z-]*)_parkeerhaven.*_'
@@ -107,7 +110,7 @@ def setup_argparse():
                                action='store_true')
     update_parser.add_argument('--interval',
                                dest='interval',
-                               default='3 days')
+                               default='10 days')
     return parser.parse_args()
 
 
@@ -198,7 +201,8 @@ def import_shape_data(source, latest_date, conn, cur):
         if latest_date != file_date:
             continue
 
-        print('Load', shp_file)
+        # print('Load', shp_file)
+        log.debug('Load', shp_file)
 
         load_shape_file(conn, cur, shp_file)
 
@@ -325,11 +329,11 @@ def update_history(conn, cur, stadsdeel, date):
         goedkeurings_datum
     )
     SELECT
-        md5(concat(parkeer_id,
+        concat(parkeer_id,
                    '-',
                    tvm_begind,
                    '-',
-                   tvm_begint)),
+                   tvm_begint),
         parkeer_id,
         buurtcode,
         straatnaam,
@@ -540,6 +544,10 @@ def execute_sql(conn, filename):
     :type conn: a Connection object
     :type filename: str
     """
+
+    log.debug('SQL:', filename)
+    print('SQL:', filename)
+
     with open(filename) as f:
         stmts = f.read()
 
