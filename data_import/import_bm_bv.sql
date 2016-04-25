@@ -39,7 +39,7 @@ INSERT INTO bv.reserveringen
     eind_tijd,
     opmerkingen
 )
-SELECT
+SELECT /* DISTINCT on (reserverings_key_md5) */
     *
 FROM bm.reserveringen_fiscaal;
 
@@ -58,7 +58,7 @@ INSERT INTO bv.reserveringen
     eind_tijd,
     opmerkingen
 )
-SELECT
+SELECT /* DISTINCT ON (reserverings_key_md5) */
     *
 FROM bm.reserveringen_mulder_schoon;
 
