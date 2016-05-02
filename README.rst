@@ -54,3 +54,9 @@ create geoviews:
 ::
 
     python manage.py migrate geo_view
+
+
+
+
+
+Test
