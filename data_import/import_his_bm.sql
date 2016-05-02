@@ -16,7 +16,7 @@ INSERT INTO bm.parkeervakken
 
 )
 SELECT DISTINCT ON (parkeer_id)
-    md5(parkeer_id),
+    parkeer_id,
     parkeer_id,
     stadsdeel,
     buurtcode,
@@ -46,13 +46,16 @@ INSERT INTO bm.reserveringen_fiscaal
     opmerkingen
 )
 SELECT
-    md5(concat(
+    concat(
         reserverings_tijden.parkeer_id,
         '-',
         bm.datums.datum,
         '-',
-        reserverings_tijden.begin_tijd
-    )),
+        reserverings_tijden.begin_tijd,
+        '-',
+        reserverings_tijden.eind_tijd,
+	'fiscaal'
+    ),
     reserverings_tijden.parkeer_id,
     reserverings_tijden.parkeer_id_md5,
     'FISCAAL',
@@ -66,7 +69,7 @@ FROM bm.datums
 INNER JOIN (
     SELECT
         parkeer_id,
-        md5(parkeer_id) AS parkeer_id_md5,
+        parkeer_id AS parkeer_id_md5,
         soort,
         CASE tvm_begint ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$'
             WHEN TRUE THEN replace(tvm_begint, ';', ':')::time
@@ -104,13 +107,17 @@ INSERT INTO bm.reserveringen_fiscaal
     opmerkingen
 )
 SELECT
-    md5(concat(
+    concat(
+        'ID',
         reserverings_tijden.parkeer_id,
-        '-',
+        'D',
         bm.datums.datum,
-        '-',
-        reserverings_tijden.begin_tijd
-    )),
+        'BT',
+        reserverings_tijden.begin_tijd,
+        'ET',
+        reserverings_tijden.eind_tijd,
+	'FISCAAL'
+    ),
     reserverings_tijden.parkeer_id,
     reserverings_tijden.parkeer_id_md5,
     'FISCAAL',
@@ -124,7 +131,7 @@ FROM bm.datums
 INNER JOIN (
     SELECT
         parkeer_id,
-        md5(parkeer_id) AS parkeer_id_md5,
+        parkeer_id AS parkeer_id_md5,
         soort,
         CASE tvm_begint ~ '^[0-9][0-9]?[:;][0-9][0-9]?([:;][0-9][0-9]?)?$'
             WHEN TRUE THEN replace(tvm_begint, ';', ':')::time
@@ -161,27 +168,36 @@ INSERT INTO bm.reserveringen_mulder
     eind_tijd,
     opmerkingen
 )
-SELECT
-    md5(concat(
+SELECT DISTINCT  ON (thekey)
+    concat(
         reserverings_tijden.parkeer_id,
         '-',
-        bm.datums.datum,
-        '-',
-        reserverings_tijden.begin_tijd
-    )),
+        the_datums.datum,
+        'BT:',
+        reserverings_tijden.begin_tijd,
+        'EIND:',
+        reserverings_tijden.eind_tijd,
+        'OPMRK:',
+        reserverings_tijden.opmerkingen,
+        'GK:',
+        reserverings_tijden.goedkeurings_datum,
+	'soort:',
+	reserverings_tijden.soort
+
+    ) as thekey,
     reserverings_tijden.parkeer_id,
     reserverings_tijden.parkeer_id_md5,
     'MULDER',
     reserverings_tijden.kenteken,
-    bm.datums.datum,
+    the_datums.datum,
     reserverings_tijden.begin_tijd,
     reserverings_tijden.eind_tijd,
     reserverings_tijden.opmerkingen
-FROM bm.datums
+FROM bm.datums as the_datums
 INNER JOIN (
     SELECT
         parkeer_id,
-        md5(parkeer_id) AS parkeer_id_md5,
+        parkeer_id AS parkeer_id_md5,
         soort,
         kenteken,
         opmerking AS opmerkingen,
@@ -208,7 +224,7 @@ INNER JOIN (
     UNION ALL
     SELECT
         parkeer_id,
-        md5(parkeer_id) AS parkeer_id_md5,
+        parkeer_id AS parkeer_id_md5,
         soort,
         kenteken,
         opmerking AS opmerkingen,
@@ -234,37 +250,39 @@ INNER JOIN (
     WHERE soort = 'MULDER' AND
           begintijd2 IS NOT NULL
 ) AS reserverings_tijden
-    ON ((reserverings_tijden.ma_vr AND
-         bm.datums.dag >= 1 AND
-         bm.datums.dag <= 5)
-        OR
-         (reserverings_tijden.ma_za AND
-          bm.datums.dag >= 1 AND
-          bm.datums.dag <= 6)
-        OR
-         (reserverings_tijden.zo AND bm.datums.dag = 0)
-        OR
-         (reserverings_tijden.ma AND bm.datums.dag = 1)
-        OR
-         (reserverings_tijden.di AND bm.datums.dag = 2)
-        OR
-         (reserverings_tijden.wo AND bm.datums.dag = 3)
-        OR
-         (reserverings_tijden."do" AND bm.datums.dag = 4)
-        OR
-         (reserverings_tijden.vr AND bm.datums.dag = 5)
-        OR
-         (reserverings_tijden.za AND bm.datums.dag = 6)
-        OR(NOT reserverings_tijden.ma_vr AND
-           NOT reserverings_tijden.ma_za AND
-           NOT reserverings_tijden.zo AND
-           NOT reserverings_tijden.ma AND
-           NOT reserverings_tijden.di AND
-           NOT reserverings_tijden.wo AND
-           NOT reserverings_tijden."do" AND
-           NOT reserverings_tijden.vr AND
-           NOT reserverings_tijden.za))
-        AND bm.datums.datum >= reserverings_tijden.goedkeurings_datum;
+ON ((reserverings_tijden.ma_vr AND
+	the_datums.dag >= 1 AND
+	the_datums.dag <= 5)
+	OR
+	(reserverings_tijden.ma_za AND
+	the_datums.dag >= 1 AND
+	the_datums.dag <= 6)
+	OR
+	  (reserverings_tijden.zo AND the_datums.dag = 0)
+	OR
+	  (reserverings_tijden.ma AND the_datums.dag = 1)
+	OR
+	  (reserverings_tijden.di AND the_datums.dag = 2)
+	OR
+	  (reserverings_tijden.wo AND the_datums.dag = 3)
+	OR
+	  (reserverings_tijden."do" AND the_datums.dag = 4)
+	OR
+	  (reserverings_tijden.vr AND the_datums.dag = 5)
+	OR
+	  (reserverings_tijden.za AND the_datums.dag = 6)
+	OR(
+	  NOT reserverings_tijden.ma_vr AND
+  	  NOT reserverings_tijden.ma_za AND
+	  NOT reserverings_tijden.zo AND
+	  NOT reserverings_tijden.ma AND
+	  NOT reserverings_tijden.di AND
+	  NOT reserverings_tijden.wo AND
+	  NOT reserverings_tijden."do" AND
+	  NOT reserverings_tijden.vr AND
+	  NOT reserverings_tijden.za)
+	)
+	AND the_datums.datum >= reserverings_tijden.goedkeurings_datum;
 
 TRUNCATE bm.reserveringen_mulder_schoon;
 
@@ -304,13 +322,16 @@ INSERT INTO bm.reserveringen_mulder_schoon
     "opmerkingen"
 )
 SELECT
-    md5(concat(
+    concat(
+        'id',
         mulder.parkeer_id,
-        '-',
+        'd',
         mulder.reserverings_datum,
-        '-',
-        mulder.begin_tijd
-    )),
+        'bt',
+        mulder.begin_tijd,
+        'et',
+        mulder.eind_tijd
+    ),
     mulder.parkeer_id,
     mulder.parkeer_id_md5,
     mulder.soort,
@@ -344,14 +365,16 @@ INSERT INTO bm.reserveringen_mulder_schoon
     "opmerkingen"
 )
 
-SELECT
-    md5(concat(
+SELECT /* DISTINCT on (thekey) */
+    concat(
         mulder.parkeer_id,
         '-',
         mulder.reserverings_datum,
         '-',
+        fiscaal.begin_tijd,
+        '-',
         fiscaal.eind_tijd
-    )),
+    ) as thekey,
     mulder.parkeer_id,
     mulder.parkeer_id_md5,
     mulder.soort,
@@ -385,16 +408,17 @@ INSERT INTO bm.reserveringen_mulder_schoon
     "eind_tijd",
     "opmerkingen"
 )
-SELECT
+SELECT /* DISTINCT on (thekey) */
     concat(
         a.parkeer_id,
         '-',
         a.reserverings_datum,
         '-',
         a.begin_tijd,
-	'-',
-        a.eind_tijd
-    ),
+        '*',
+        a.eind_tijd,
+        '-'
+    ) as thekey,
     a.parkeer_id,
     a.parkeer_id_md5,
     a.soort,
@@ -426,3 +450,6 @@ FROM (
     WHERE mulder.begin_tijd < fiscaal.begin_tijd AND
         mulder.eind_tijd > fiscaal.eind_tijd
 ) AS a;
+
+
+
