@@ -1,0 +1,34 @@
+database:
+  image: admin.datapunt.amsterdam.nl:5000/atlas/postgres
+  environment:
+    POSTGRES_PASSWORD: insecure
+    POSTGRES_USER: parkeervakken
+    POSTGRES_DB: parkeervakken
+
+importer:
+  build: ../data_import
+  links:
+    - database:parkeervakken_db
+  volumes:
+    - /mnt/data/diva_import/parkeren:/app/data
+#    - ../data:/app/data
+  environment:
+    PARKEERVAKKEN_DB_NAME: parkeervakken
+    PARKEERVAKKEN_DB_USER: parkeervakken
+    PARKEERVAKKEN_DB_PASSWORD: insecure
+
+db-backup:
+  image: admin.datapunt.amsterdam.nl:5000/atlas/postgres
+  links:
+    - database:db
+  volumes:
+    - ./backups:/tmp/backups
+  command: >
+    bash -c "echo db:5432:parkeervakken:parkeervakken:insecure > ~/.pgpass \
+            && chmod 600 ~/.pgpass \
+            && pg_dump --clean \
+                        -Fc \
+                        -U parkeervakken \
+                        -h db -p 5432 \
+                        parkeervakken > /tmp/backups/database.dump"
+

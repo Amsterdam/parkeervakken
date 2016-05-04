@@ -1,5 +1,5 @@
 FROM python:3.5
-MAINTAINER datapunt@amsterdam.nl
+MAINTAINER datapunt.ois@amsterdam.nl
 
 ENV PYTHONUNBUFFERED 1
 

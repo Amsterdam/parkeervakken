@@ -197,3 +197,5 @@ avro_files/
 
 docker/
 parkeervakken/
+
+.jenkins/backups
