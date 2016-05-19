@@ -45,7 +45,7 @@ INSERT INTO bm.reserveringen_fiscaal
     eind_tijd,
     opmerkingen
 )
-SELECT
+SELECT DISTINCT
     concat(
         reserverings_tijden.parkeer_id,
         '-',
@@ -106,7 +106,7 @@ INSERT INTO bm.reserveringen_fiscaal
     eind_tijd,
     opmerkingen
 )
-SELECT
+SELECT DISTINCT
     concat(
         'ID',
         reserverings_tijden.parkeer_id,
