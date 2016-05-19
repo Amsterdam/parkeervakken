@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
 RUN adduser --system datapunt && \
 	mkdir -p /static && \
 	mkdir -p /unzipped && \
+	mkdir -p /unzipped/nietfiscaal && \
 	chown datapunt /static && \
 	pip install uwsgi
 
