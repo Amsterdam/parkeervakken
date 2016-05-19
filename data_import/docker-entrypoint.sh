@@ -8,8 +8,8 @@ source docker-wait.sh
 
 echo 'unzipping latest source shape file'
 
-unzip $(ls -Art data/*.zip | tail -n 1) -d /app/unzipped/
-unzip $(ls -Art data/*niet*fiscaal*.zip | tail -n 1) -d /app/unzipped/nietfiscaal
+unzip -o $(ls -Art data/*.zip | tail -n 1) -d /app/unzipped/
+unzip -o $(ls -Art data/*niet*fiscaal*.zip | tail -n 1) -d /app/unzipped/nietfiscaal
 
 echo 'clear / build tables'
 # clear and or create tables
