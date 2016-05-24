@@ -27,9 +27,9 @@ db-backup:
     bash -c "echo db:5432:parkeervakken:parkeervakken:insecure > ~/.pgpass \
             && chmod 600 ~/.pgpass \
             && pg_dump --clean \
-                       --create \
                         -Fc \
                         -U parkeervakken \
                         -h db -p 5432 \
                         parkeervakken > /tmp/backups/database.dump"
 
+# pg_restore -U parkeervakken -c -d parkeervakken database.dump
