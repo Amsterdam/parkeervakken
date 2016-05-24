@@ -450,6 +450,3 @@ FROM (
     WHERE mulder.begin_tijd < fiscaal.begin_tijd AND
         mulder.eind_tijd > fiscaal.eind_tijd
 ) AS a;
-
-
-

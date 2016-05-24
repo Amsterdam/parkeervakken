@@ -21,7 +21,7 @@ python import_data.py --user $PARKEERVAKKEN_DB_USER \
 		      --database parkeervakken \
                       initialize
 
-echo 'load parkeer data'
+echo 'Load parkeer data'
 # run import / update data
 python import_data.py --user $PARKEERVAKKEN_DB_USER \
 		      --password $PARKEERVAKKEN_DB_PASSWORD \
@@ -31,15 +31,15 @@ python import_data.py --user $PARKEERVAKKEN_DB_USER \
                       update \
                       --source /app/unzipped
 
-echo 'load parkeer NIET FISCAAL data'
-# run import / update data
-python import_data.py --user $PARKEERVAKKEN_DB_USER \
-		      --password $PARKEERVAKKEN_DB_PASSWORD \
-		      --host $PARKEERVAKKEN_DB_PORT_5432_TCP_ADDR \
-		      --port $PARKEERVAKKEN_DB_PORT_5432_TCP_PORT \
-		      --database parkeervakken \
-                      update \
-                      --source /app/unzipped/nietfiscaal
-
+#echo 'load parkeer NIET FISCAAL data'
+## run import / update data
+#python import_data.py --user $PARKEERVAKKEN_DB_USER \
+#		      --password $PARKEERVAKKEN_DB_PASSWORD \
+#		      --host $PARKEERVAKKEN_DB_PORT_5432_TCP_ADDR \
+#		      --port $PARKEERVAKKEN_DB_PORT_5432_TCP_PORT \
+#		      --database parkeervakken \
+#                      update \
+#                      --source /app/unzipped/nietfiscaal
+#
 
 echo 'parkeerdata DONE'
