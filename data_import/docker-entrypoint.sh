@@ -3,10 +3,14 @@
 set -e
 set -u
 
+echo $PARKEERVAKKEN_DB_PORT_5432_TCP_ADDR
+echo $PARKEERVAKKEN_DB_PORT_5432_TCP_PORT
+
 # wait for database to load
 source docker-wait.sh
 
 echo 'unzipping latest source shape file'
+
 
 unzip -o $(ls -Art data/* | grep [0-9].zip | tail -n 1) -d /app/unzipped/
 

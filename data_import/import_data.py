@@ -236,10 +236,13 @@ def load_shape_file(conn, cur, shp_file):
     if stadsdeel == '':
         stadsdeel = 'unknown'
 
-    print(shp_file.stem)
+    # print(shp_file.stem)
+    # print(shp_file.suffix)
+    # print(shp_file)
+    # print(shp_file.parts)
 
-    if 'RD' in shp_file.stem:
-        stadsdeel += '_RD'
+    if 'nietfiscaal' in shp_file.parts:
+        stadsdeel += '_NF'
 
     stadsdeel = stadsdeel.lower().replace('-', '_')
 
