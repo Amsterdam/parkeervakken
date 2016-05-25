@@ -236,7 +236,17 @@ def load_shape_file(conn, cur, shp_file):
     if stadsdeel == '':
         stadsdeel = 'unknown'
 
+    # print(shp_file.stem)
+    # print(shp_file.suffix)
+    # print(shp_file)
+    # print(shp_file.parts)
+
+    if 'nietfiscaal' in shp_file.parts:
+        stadsdeel += '_NF'
+
     stadsdeel = stadsdeel.lower().replace('-', '_')
+
+    print(stadsdeel)
 
     drop_table(conn, cur, 'parkeervakken', 'public')
 
@@ -577,6 +587,7 @@ def main():
     if command == 'init':
         create_tables(**database_credentials)
     elif command == 'update':
+
         source = pathlib.Path(args.source)
         skip_import = args.skip_import
         skip_dates = args.skip_dates
