@@ -32,3 +32,4 @@ db-backup:
                         -h db -p 5432 \
                         parkeervakken > /tmp/backups/database.dump"
 
+# pg_restore -U parkeervakken -c -d parkeervakken database.dump

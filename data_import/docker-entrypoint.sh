@@ -3,10 +3,14 @@
 set -e
 set -u
 
+echo $PARKEERVAKKEN_DB_PORT_5432_TCP_ADDR
+echo $PARKEERVAKKEN_DB_PORT_5432_TCP_PORT
+
 # wait for database to load
 source docker-wait.sh
 
 echo 'unzipping latest source shape file'
+
 
 unzip -o $(ls -Art data/* | grep [0-9].zip | tail -n 1) -d /app/unzipped/
 
@@ -21,7 +25,7 @@ python import_data.py --user $PARKEERVAKKEN_DB_USER \
 		      --database parkeervakken \
                       initialize
 
-echo 'load parkeer data'
+echo 'Load parkeer data'
 # run import / update data
 python import_data.py --user $PARKEERVAKKEN_DB_USER \
 		      --password $PARKEERVAKKEN_DB_PASSWORD \
@@ -39,7 +43,8 @@ python import_data.py --user $PARKEERVAKKEN_DB_USER \
 		      --port $PARKEERVAKKEN_DB_PORT_5432_TCP_PORT \
 		      --database parkeervakken \
                       update \
-                      --source /app/unzipped/nietfiscaal
+                      --source /app/unzipped/nietfiscaal \
+                      --skip-dates \
 
 
 echo 'parkeerdata DONE'
