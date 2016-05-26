@@ -32,4 +32,6 @@ db-backup:
                         -h db -p 5432 \
                         parkeervakken > /tmp/backups/database.dump"
 
-# pg_restore -U parkeervakken -c -d parkeervakken database.dump
+# To test restore
+# docker exec -it jenkins_database_1 bash
+# pg_restore -U parkeervakken -c -d parkeervakken /tmp/backups/database.dump

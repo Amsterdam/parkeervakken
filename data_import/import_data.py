@@ -427,8 +427,8 @@ def update_dates(conn, cur, interval='1 day'):
             generate_series(min_date, max_date, interval '1d') as datum
         FROM (
             SELECT
-                max(goedkeurings_datum) AS min_date,
-                max(goedkeurings_datum) + interval %(interval)s AS max_date
+                CURRENT_DATE AS min_date,
+                CURRENT_DATE + interval %(interval)s AS max_date
             FROM his.parkeervakken
             GROUP BY goedkeurings_datum
         ) AS u
