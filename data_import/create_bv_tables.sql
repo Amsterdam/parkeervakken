@@ -8,7 +8,8 @@ DROP TABLE IF EXISTS bv.parkeervakken CASCADE;
 
 CREATE TABLE bv.parkeervakken (
     "parkeer_id_md5" text PRIMARY KEY,
-    "parkeer_id" varchar(10),
+    "parkeer_id" varchar(30),
+    "parkeer_geo_id" varchar(30),
     "stadsdeel" varchar(20),
     "buurtcode" varchar(20),
     "straatnaam" varchar(40),
@@ -21,11 +22,12 @@ CREATE TABLE bv.parkeervakken (
 );
 
 SELECT AddGeometryColumn('bv','parkeervakken','geom','0','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('bv','parkeervakken','geo_id','0','POINT',2);
 
 CREATE TABLE IF NOT EXISTS bv.reserveringen (
     "reserverings_key_md5" text PRIMARY KEY,
     "parkeer_id_md5" text,
-    "parkeer_id" varchar(10),
+    "parkeer_id" varchar(30),
     "soort" varchar(20),
     "kenteken" varchar(20) DEFAULT NULL,
 

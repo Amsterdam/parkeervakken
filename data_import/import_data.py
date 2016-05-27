@@ -586,6 +586,7 @@ def main():
 
     if command == 'init':
         create_tables(**database_credentials)
+
     elif command == 'update':
 
         source = pathlib.Path(args.source)

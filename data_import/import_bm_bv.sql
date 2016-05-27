@@ -7,6 +7,7 @@ INSERT INTO bv.parkeervakken
 (
     parkeer_id_md5,
     parkeer_id,
+    parkeer_geo_id,
     stadsdeel,
     buurtcode,
     straatnaam,
@@ -16,10 +17,29 @@ INSERT INTO bv.parkeervakken
     e_type,
     bord,
 
-    geom
+    geom,
+    geo_id
 )
 SELECT
-    *
+    parkeer_id_md5,
+    parkeer_id,
+    concat(
+        ST_X(ST_Centroid(geom))::integer,
+        ST_Y(ST_Centroid(geom))::integer
+    ),
+
+    stadsdeel,
+    buurtcode,
+    straatnaam,
+    "type",
+    aantal,
+
+    e_type,
+    bord,
+
+    geom,
+    ST_Centroid(geom) as geo_id
+
 FROM bm.parkeervakken;
 
 TRUNCATE bv.reserveringen;
