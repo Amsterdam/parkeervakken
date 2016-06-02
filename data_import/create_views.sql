@@ -2,6 +2,7 @@ CREATE VIEW bv.geo_parkeervakken AS
 
   SELECT
     pv.parkeer_id      AS id,
+    pv.parkeer_geo_id  AS geo_id,
     pv.buurtcode       AS buurtcode,
     pv.stadsdeel       AS stadsdeel,
     pv.straatnaam      AS straatnaam,

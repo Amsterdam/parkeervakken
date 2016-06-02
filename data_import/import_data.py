@@ -257,7 +257,7 @@ def load_shape_file(conn, cur, shp_file):
     # Create the sql statements for loading shape data into the database
     try:
         output = subprocess.check_output(shp2pgsql_cmd)
-        shp_stmts = output.decode()
+        shp_stmts = output.decode('UTF-8')
     except Exception:
         conn.close()
         raise
@@ -586,6 +586,7 @@ def main():
 
     if command == 'init':
         create_tables(**database_credentials)
+
     elif command == 'update':
 
         source = pathlib.Path(args.source)
