@@ -7,7 +7,7 @@ DROP TABLE IF EXISTS bm.parkeervakken CASCADE;
 CREATE TABLE IF NOT EXISTS bm.parkeervakken (
     "parkeer_id_md5" text PRIMARY KEY,
     "parkeer_id" varchar(10),
-    "stadsdeel" varchar(20),
+    "stadsdeel" varchar(40),
     "buurtcode" varchar(20),
     "straatnaam" varchar(40),
     "type" varchar(20),
