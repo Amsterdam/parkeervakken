@@ -8,7 +8,7 @@ DROP TABLE IF EXISTS his.parkeervakken CASCADE;
 
 CREATE TABLE his.parkeervakken (
     "parkeervak_id_md5" text PRIMARY KEY,
-    "parkeer_id" varchar(10),
+    "parkeer_id" varchar(40),
     "buurtcode" varchar(20),
     "straatnaam" varchar(40),
     "soort" varchar(20),
