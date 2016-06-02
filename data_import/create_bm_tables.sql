@@ -6,7 +6,7 @@ DROP TABLE IF EXISTS bm.parkeervakken CASCADE;
 
 CREATE TABLE IF NOT EXISTS bm.parkeervakken (
     "parkeer_id_md5" text PRIMARY KEY,
-    "parkeer_id" varchar(10),
+    "parkeer_id" varchar(30),
     "stadsdeel" varchar(40),
     "buurtcode" varchar(20),
     "straatnaam" varchar(40),
@@ -23,7 +23,7 @@ DROP TABLE IF EXISTS bm.reserveringen_fiscaal CASCADE;
 
 CREATE TABLE IF NOT EXISTS bm.reserveringen_fiscaal (
     "reserverings_key_md5" text PRIMARY KEY,
-    "parkeer_id" varchar(10),
+    "parkeer_id" varchar(30),
     "parkeer_id_md5" text,
     "soort" varchar(20),
     "kenteken" varchar(20) DEFAULT NULL,
@@ -39,7 +39,7 @@ DROP TABLE IF EXISTS bm.reserveringen_mulder CASCADE;
 
 CREATE TABLE IF NOT EXISTS bm.reserveringen_mulder (
     "reserverings_key_md5" text PRIMARY KEY,
-    "parkeer_id" varchar(10),
+    "parkeer_id" varchar(40),
     "parkeer_id_md5" text,
     "soort" varchar(20),
     "kenteken" varchar(20) DEFAULT NULL,
@@ -56,7 +56,7 @@ DROP TABLE IF EXISTS bm.reserveringen_mulder_schoon CASCADE;
 
 CREATE TABLE IF NOT EXISTS bm.reserveringen_mulder_schoon (
     "reserverings_key_md5" text PRIMARY KEY,
-    "parkeer_id" varchar(10),
+    "parkeer_id" varchar(40),
     "parkeer_id_md5" text,
     "soort" varchar(20),
     "kenteken" varchar(20) DEFAULT NULL,
