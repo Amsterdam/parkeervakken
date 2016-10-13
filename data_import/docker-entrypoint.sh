@@ -14,6 +14,15 @@ echo 'unzipping latest source shape file'
 
 unzip -o $(ls -Art data/* | grep [0-9].zip | tail -n 1) -d /app/unzipped/
 
+count=$(ls /app/unzipped/*shp -l | wc -l)
+
+echo $count shapefiles
+
+if [ "$count" -lt '8' ]; then
+    echo "missing shp files";
+    exit
+fi
+
 unzip -o $(ls -Art data/*niet*fiscaal*.zip | tail -n 1) -d /app/unzipped/nietfiscaal
 
 echo 'clear / build tables'
