@@ -15,6 +15,7 @@ import:
     PARKEERVAKKEN_DB_NAME: parkeervakken
     PARKEERVAKKEN_DB_USER: postgres
     PARKEERVAKKEN_DB_PASSWORD: insecure
+    PARKEERVAKKEN_OS_PASSWORD: insecure
   volumes:
       - ./data:/app/data
 

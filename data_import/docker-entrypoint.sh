@@ -9,10 +9,12 @@ echo $PARKEERVAKKEN_DB_PORT_5432_TCP_PORT
 # wait for database to load
 source docker-wait.sh
 
+# Get files stored in the objectstore
+echo "Getting zip files from objectstore"
+python ./objectstore.py
+
 echo 'unzipping latest source shape file'
-
-
-unzip -o $(ls -Art data/* | grep [0-9].zip | tail -n 1) -d /app/unzipped/
+unzip -o $(ls -Art data/parkeren/* | grep [0-9].zip | tail -n 1) -d /app/unzipped/
 
 count=$(ls /app/unzipped/*shp -l | wc -l)
 
@@ -23,7 +25,7 @@ if [ "$count" -lt '8' ]; then
     exit
 fi
 
-unzip -o $(ls -Art data/*niet*fiscaal*.zip | tail -n 1) -d /app/unzipped/nietfiscaal
+unzip -o $(ls -Art data/parkeren/*niet*fiscaal*.zip | tail -n 1) -d /app/unzipped/nietfiscaal
 
 echo 'clear / build tables'
 # clear and or create tables

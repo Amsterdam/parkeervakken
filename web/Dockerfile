@@ -6,7 +6,7 @@ ENV PYTHONUNBUFFERED 1
 EXPOSE 8000
 
 RUN apt-get update && \
-	apt-get install -y libgeos-dev && \
+	apt-get install --fix-missing -y libgeos-dev && \
         apt-get install -y netcat && \
 	adduser --system datapunt && \
 	mkdir -p /static && \
