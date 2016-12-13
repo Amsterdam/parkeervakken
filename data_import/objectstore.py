@@ -10,6 +10,9 @@ logging.getLogger("swiftclient").setLevel(logging.WARNING)
 
 destination_dir = "data/"
 
+assert os.getenv('PARKEERVAKKEN_OS_PASSWORD')
+
+
 object_store = {
     'auth_version': '2.0',
     'authurl': 'https://identity.stack.cloudvps.com/v2.0',
