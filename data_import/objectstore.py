@@ -22,7 +22,7 @@ object_store = {
     'os_options': {
         'tenant_id': 'fd380ccb48444960837008800a453122',
         'region_name': 'NL',
-        #'endpoint_type' : 'internalURL'
+        'endpoint_type' : 'internalURL'
     }
 }
 
