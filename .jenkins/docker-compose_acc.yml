@@ -9,13 +9,11 @@ importer:
   image: build.datapunt.amsterdam.nl:5000/datapunt/parkeervakken:acceptance
   links:
     - database:parkeervakken_db
-  volumes:
-    - /mnt/data/diva_import/parkeren:/app/data
-#    - ../data:/app/data
   environment:
     PARKEERVAKKEN_DB_NAME: parkeervakken
     PARKEERVAKKEN_DB_USER: parkeervakken
     PARKEERVAKKEN_DB_PASSWORD: insecure
+    PARKEERVAKKEN_OS_PASSWORD:
 
 db-backup:
   image: build.datapunt.amsterdam.nl:5000/atlas/postgres
