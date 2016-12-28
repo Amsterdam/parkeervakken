@@ -26,7 +26,6 @@ node {
     stage('Test') {
         tryStep "test", {
             sh "docker-compose -p parkeervakken -f .jenkins/docker-compose.yml build"
-            sh "docker-compose -p parkeervakken -f .jenkins/docker-compose.yml run --rm tests"
         }, {
             sh "docker-compose -p parkeervakken -f .jenkins/docker-compose.yml down"
         }
