@@ -1,22 +1,24 @@
 database:
-  image: build.datapunt.amsterdam.nl:5000/atlas/postgres
+  image: admin.datapunt.amsterdam.nl:5000/atlas/postgres
   environment:
     POSTGRES_PASSWORD: insecure
     POSTGRES_USER: parkeervakken
     POSTGRES_DB: parkeervakken
 
 importer:
-  image: build.datapunt.amsterdam.nl:5000/datapunt/parkeervakken:production
+  image: build.datapunt.amsterdam.nl:5000/datapunt/parkeervakken:acceptance
   links:
     - database:parkeervakken_db
+  volumes:
+    - /mnt/data/diva_import/parkeren:/app/data
+#    - ../data:/app/data
   environment:
     PARKEERVAKKEN_DB_NAME: parkeervakken
     PARKEERVAKKEN_DB_USER: parkeervakken
     PARKEERVAKKEN_DB_PASSWORD: insecure
-    PARKEERVAKKEN_OS_PASSWORD:
 
 db-backup:
-  image: build.datapunt.amsterdam.nl:5000/atlas/postgres
+  image: admin.datapunt.amsterdam.nl:5000/atlas/postgres
   links:
     - database:db
   volumes:
