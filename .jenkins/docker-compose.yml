@@ -6,7 +6,7 @@ database:
     POSTGRES_DB: parkeervakken
 
 importer:
-  image: build.datapunt.amsterdam.nl:5000/datapunt/parkeervakken:production
+  image: build.datapunt.amsterdam.nl:5000/datapunt/parkeervakken:${ENVIRONMENT}
   links:
     - database:parkeervakken_db
   environment:
