@@ -13,6 +13,7 @@ CREATE TABLE bv.parkeervakken (
     "stadsdeel" varchar(20),
     "buurtcode" varchar(20),
     "straatnaam" varchar(40),
+    "soort" varchar(20),
     "type" varchar(20),
     "aantal" numeric(10,0),
 

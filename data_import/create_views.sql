@@ -7,6 +7,7 @@ CREATE VIEW bv.geo_parkeervakken AS
     pv.stadsdeel       AS stadsdeel,
     pv.straatnaam      AS straatnaam,
     pv.aantal          AS aantal,
+    pv.soort           AS soort,
     pv.type            AS type,
 
     pv.e_type          AS e_type,

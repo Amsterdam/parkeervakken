@@ -7,6 +7,7 @@ INSERT INTO bm.parkeervakken
     stadsdeel,
     buurtcode,
     straatnaam,
+    soort,
     "type",
     aantal,
     e_type,
@@ -21,6 +22,7 @@ SELECT DISTINCT ON (parkeer_id)
     stadsdeel,
     buurtcode,
     straatnaam,
+    soort,
     "type",
     aantal,
 

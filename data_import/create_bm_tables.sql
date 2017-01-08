@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS bm.parkeervakken (
     "stadsdeel" varchar(40),
     "buurtcode" varchar(20),
     "straatnaam" varchar(40),
+    "soort" varchar(20),
     "type" varchar(20),
     "aantal" numeric(10,0),
     "e_type" varchar(5),

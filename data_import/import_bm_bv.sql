@@ -11,6 +11,7 @@ INSERT INTO bv.parkeervakken
     stadsdeel,
     buurtcode,
     straatnaam,
+    soort,
     "type",
     aantal,
 
@@ -31,6 +32,7 @@ SELECT
     stadsdeel,
     buurtcode,
     straatnaam,
+    soort,
     "type",
     aantal,
 

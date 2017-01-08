@@ -1,8 +1,14 @@
 import logging
 import os
+
 from swiftclient.client import Connection
 
+from dateutil import parser
+
+logging.basicConfig(level=logging.DEBUG)
+
 log = logging.getLogger(__name__)
+
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -12,6 +18,9 @@ destination_dir = "data/"
 
 assert os.getenv('PARKEERVAKKEN_OS_PASSWORD')
 
+global container
+
+container = 'parkeren'
 
 object_store = {
     'auth_version': '2.0',
@@ -22,72 +31,95 @@ object_store = {
     'os_options': {
         'tenant_id': 'fd380ccb48444960837008800a453122',
         'region_name': 'NL',
-        'endpoint_type' : 'internalURL'
     }
 }
 
+parkeren_conn = Connection(**object_store)
 
-def fetch_importfiles():
+
+def get_store_object(object_meta_data):
+    """ get a single file from object store """
+    return parkeren_conn.get_object(
+        container, object_meta_data['name'])[1]
+
+
+def save_file(time, object_meta_data):
+    zipname = object_meta_data['name'].split('/')[-1]
+    log.info('Downloading latest: %s %s', time, zipname)
+    latest_zip = get_store_object(object_meta_data)
+
+    # create the directory inclusive nonexisting path
+    os.makedirs('data/parkeren/', exist_ok=True)
+
+    # save output to file!
+    with open('data/parkeren/{}'.format(zipname), 'wb') as outputzip:
+        outputzip.write(latest_zip)
+
+
+def get_latest_zipfile():
     """
-    Fetch al importfiles
-    :return:
+    Get latest zipfile uploaded by mks
     """
-    store = ObjectStore()
+    niet_fiscaal = []
+    zip_list = []
 
-    for container in store.get_containers():
-        container_name = container['name']
-        for file_object in store._get_full_container_list(container_name, []):
-            path = file_object['name'].split('/')
+    meta_data = get_full_container_list(
+        parkeren_conn, container)
 
-            dir = os.path.join(destination_dir, container_name, '/'.join(path[:-1]))
-            fname = os.path.join(destination_dir, container_name, '/'.join(path))
+    for o_info in meta_data:
+        if o_info['content_type'] in [
+                'application/zip', 'application/octet-stream']:
+            dt = parser.parse(o_info['last_modified'])
+            if 'nietfiscaal' in o_info['name']:
+                niet_fiscaal.append((dt, o_info))
+                continue
+            zip_list.append((dt, o_info))
 
-            # create the directory inclusive nonexisting path
-            os.makedirs(dir, exist_ok=True)
+    zips_sorted_by_time = sorted(zip_list)
+    nf_zips_sorted_by_time = sorted(niet_fiscaal)
 
-            # Create the file with content if it is not a directory in object store
-            if file_object['content_type'] != 'application/directory':
-                newfile = open(fname, 'wb')
-                newfile.write(store.get_store_object(container, file_object))
-                newfile.close()
+    log.info('Available files..')
+
+    for time, meta in zips_sorted_by_time:
+        log.info('%s %s', time, meta['name'])
+
+    for time, meta in nf_zips_sorted_by_time:
+        log.info('%s %s', time, meta['name'])
+
+    if not zips_sorted_by_time:
+        raise ValueError
+
+    if not nf_zips_sorted_by_time:
+        raise ValueError
+
+    time, object_meta_data = zips_sorted_by_time[-1]
+    # Download the latest data
+    save_file(time, object_meta_data)
+
+    # Download laatste niet fiscaal data
+    time, object_meta_data = nf_zips_sorted_by_time[-1]
+    save_file(time, object_meta_data)
 
 
-class ObjectStore():
-    RESP_LIMIT = 10000  # serverside limit of the response
+def get_full_container_list(conn, container, **kwargs):
+    limit = 10000
+    kwargs['limit'] = limit
+    page = []
 
-    def __init__(self):
-        self.conn = Connection(**object_store)
+    seed = []
 
-    def get_containers(self):
-        _, containers = self.conn.get_account()
-        return containers
+    _, page = conn.get_container(container, **kwargs)
+    seed.extend(page)
 
-    def get_store_object(self, container, file_object):
-        """
-        Returns the object store
-        :param container:
-        :param file_object
-        :return:
-        """
-        return self.conn.get_object(container['name'], file_object['name'])[1]
-
-    def _get_full_container_list(self, container, seed, **kwargs):
-        kwargs['limit'] = self.RESP_LIMIT
-        if len(seed):
-            kwargs['marker'] = seed[-1]['name']
-
-        _, page = self.conn.get_container(container, **kwargs)
+    while len(page) == limit:
+        # keep getting pages..
+        kwargs['marker'] = seed[-1]['name']
+        _, page = conn.get_container(container, **kwargs)
         seed.extend(page)
-        return seed if len(page) < self.RESP_LIMIT else \
-            self._get_full_container_list(container, seed, **kwargs)
 
-    def put_to_objectstore(self, container, object_name, object_content, content_type):
-        return self.conn.put_object(container, object_name, contents=object_content, content_type=content_type)
-
-    def delete_from_objectstore(self, container, object_name):
-        return self.conn.delete_object(container, object_name)
+    return seed
 
 
 if __name__ == "__main__":
     # Download files from objectstore
-    fetch_importfiles()
+    get_latest_zipfile()

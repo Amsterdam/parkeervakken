@@ -159,11 +159,12 @@ def import_data(database,
 
     source = source.absolute()
 
-    conn = psycopg2.connect(database=database,
-                            user=user,
-                            password=password,
-                            host=host,
-                            port=port)
+    conn = psycopg2.connect(
+        database=database,
+        user=user,
+        password=password,
+        host=host,
+        port=port)
 
     with conn.cursor() as cur:
 
