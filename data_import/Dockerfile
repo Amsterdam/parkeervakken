@@ -26,5 +26,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY *.py                  /app/
 COPY *.sh                  /app/
 COPY *.sql                 /app/
+COPY .jenkins-import /.jenkins-import/
 
 CMD /app/docker-entrypoint.sh
