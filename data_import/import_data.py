@@ -11,6 +11,8 @@ import psycopg2
 import logging
 
 
+logging.basicConfig(level=logging.DEBUG)
+
 log = logging.getLogger(__name__)
 
 # The way file names are expected to be.
@@ -166,15 +168,20 @@ def import_data(database,
         host=host,
         port=port)
 
-    with conn.cursor() as cur:
+    table_counts(conn)
 
-        if not skip_import:
-            latest_date = find_latest_date(source, 'shp')
+    with conn:
+        with conn.cursor() as cur:
 
-            import_shape_data(source, latest_date, conn, cur)
+            if not skip_import:
+                latest_date = find_latest_date(source, 'shp')
 
-        if not skip_dates:
-            update_dates(conn, cur, interval)
+                import_shape_data(source, latest_date, conn, cur)
+
+            if not skip_dates:
+                update_dates(conn, cur, interval)
+
+    table_counts(conn)
 
     files = [
         'import_his_bm.sql',
@@ -183,6 +190,50 @@ def import_data(database,
 
     for filename in files:
         execute_sql(conn, filename)
+
+    table_counts(conn)
+
+
+def table_counts(conn):
+
+    table_names = [
+        'his.parkeervakken',
+        'bm.parkeervakken',
+        'bm.reserveringen_fiscaal',
+        'bm.reserveringen_mulder',
+        'bm.reserveringen_mulder_schoon',
+        'bv.parkeervakken',
+        'bv.reserveringen',
+        'bv.reserveringen_fiscaal',
+        'bv.reserveringen_mulder',
+        'bv.reserveringen_mulder_schoon',
+    ]
+
+    log.debug("""
+
+        his = source data'
+        bm = Business Model (intermediate tables)
+        bv = Business Views (final output tables)
+
+    """)
+
+    for table in table_names:
+        with conn:
+            with conn.cursor() as cursor:
+                count_statement = f"SELECT COUNT(*) FROM {table};"
+                count = 0
+                try:
+                    cursor.execute(count_statement)
+                    results = cursor.fetchone()
+                    count = results[0]
+                except Exception as e:
+                    pass
+                    # conn.close()
+                    # log.debug(e)
+
+                log.info('Count %40s: %-10s', table, count)
+
+    log.debug('\n\n')
 
 
 def import_shape_data(source, latest_date, conn, cur):
@@ -203,7 +254,7 @@ def import_shape_data(source, latest_date, conn, cur):
             continue
 
         # print('Load', shp_file)
-        log.debug('Load', shp_file)
+        log.debug('Load %s', shp_file)
 
         load_shape_file(conn, cur, shp_file)
 
@@ -237,17 +288,12 @@ def load_shape_file(conn, cur, shp_file):
     if stadsdeel == '':
         stadsdeel = 'unknown'
 
-    # print(shp_file.stem)
-    # print(shp_file.suffix)
-    # print(shp_file)
-    # print(shp_file.parts)
-
     if 'nietfiscaal' in shp_file.parts:
         stadsdeel += '_NF'
 
     stadsdeel = stadsdeel.lower().replace('-', '_')
 
-    print(stadsdeel)
+    log.debug(stadsdeel)
 
     drop_table(conn, cur, 'parkeervakken', 'public')
 
@@ -556,8 +602,7 @@ def execute_sql(conn, filename):
     :type filename: str
     """
 
-    log.debug('SQL:', filename)
-    print('SQL:', filename)
+    log.debug('SQL: %s', filename)
 
     with open(filename) as f:
         stmts = f.read()

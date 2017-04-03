@@ -16,8 +16,9 @@ INSERT INTO bm.parkeervakken
     geom
 
 )
+
 SELECT DISTINCT ON (parkeer_id)
-    parkeer_id,
+    pid,
     parkeer_id,
     stadsdeel,
     buurtcode,
@@ -30,9 +31,30 @@ SELECT DISTINCT ON (parkeer_id)
     bord,
 
     geom
-FROM his.parkeervakken;
+
+FROM (
+    SELECT
+    parkeer_id as pid,
+    parkeer_id,
+    stadsdeel,
+    buurtcode,
+    straatnaam,
+    soort,
+    "type",
+    aantal,
+
+    e_type,
+    bord,
+
+    ST_Multi(ST_MakeValid(geom)) as geom
+
+    FROM his.parkeervakken) as pvg
+WHERE
+    ST_GeometryType(pvg.geom) = 'ST_MultiPolygon';
+
 
 TRUNCATE bm.reserveringen_fiscaal;
+
 
 INSERT INTO bm.reserveringen_fiscaal
 (

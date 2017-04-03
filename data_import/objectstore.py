@@ -93,6 +93,7 @@ def get_latest_zipfile():
         raise ValueError
 
     time, object_meta_data = zips_sorted_by_time[-1]
+
     # Download the latest data
     save_file(time, object_meta_data)
 
