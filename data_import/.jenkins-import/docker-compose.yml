@@ -14,7 +14,7 @@ importer:
     PARKEERVAKKEN_DB_USER: parkeervakken
     PARKEERVAKKEN_DB_PASSWORD: insecure
     PARKEERVAKKEN_OS_PASSWORD:
-    DATAPUNT_API_URL: ${DATAPUNT_API_URL:-https://api.data.amsterdam.nl/}
+    DATAPUNT_API_URL:
 
 db-backup:
   image: build.datapunt.amsterdam.nl:5000/atlas/postgres
