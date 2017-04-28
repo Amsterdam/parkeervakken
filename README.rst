@@ -1,3 +1,16 @@
+Parkeervakken
+=============
+
+Imports parkeervakken shape file into database.
+provides the WFS services with the actual parkingsport dataset 
+
+- ALL parking spots. 
+- parking spot data like (FISCAAL / MULDER) ficscaal means non free spots. Mulder are spots for handicaped people.
+- TVM ( tijdelijke verkeersmaatregelen ) dataset.
+- park sign information. (Electric / laden lossen etc)
+
+NO WEB API YET besides a mapserver wfs.
+
 
 Docker Installation
 ===================
