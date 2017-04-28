@@ -3,7 +3,7 @@ MAINTAINER datapunt@amsterdam.nl
 
 ENV PYTHONUNBUFFERED 1
 
-RUN apt-get install -y \
+RUN apt-get update && apt-get install -y \
 	postgresql-client \
 	postgis \
 	netcat \
