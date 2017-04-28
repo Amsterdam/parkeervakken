@@ -1,8 +1,7 @@
-FROM python:3.6
-MAINTAINER datapunt.ois@amsterdam.nl
+FROM amsterdam/docker_python:latest
+MAINTAINER datapunt@amsterdam.nl
 
 ENV PYTHONUNBUFFERED 1
-
 
 RUN apt-get install -y \
 	libgeos-dev \
@@ -16,7 +15,6 @@ RUN adduser --system datapunt && \
 	mkdir -p /unzipped/nietfiscaal && \
 	chown datapunt /static && \
 	pip install uwsgi
-
 
 WORKDIR /app
 
