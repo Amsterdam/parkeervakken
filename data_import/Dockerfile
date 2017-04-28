@@ -4,8 +4,6 @@ MAINTAINER datapunt@amsterdam.nl
 ENV PYTHONUNBUFFERED 1
 
 RUN apt-get install -y \
-	libgeos-dev \
-        postgis \
 	netcat \
 	unzip
 
