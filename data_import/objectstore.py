@@ -16,7 +16,7 @@ logging.getLogger("swiftclient").setLevel(logging.WARNING)
 
 destination_dir = "data/"
 
-assert os.getenv('PARKEERVAKKEN_OS_PASSWORD')
+assert os.getenv('PARKEERVAKKEN_OBJECTSTORE_PASSWORD')
 
 global container
 
@@ -26,7 +26,7 @@ object_store = {
     'auth_version': '2.0',
     'authurl': 'https://identity.stack.cloudvps.com/v2.0',
     'user': os.getenv('OBJECTSTORE_USER', 'parkeren'),
-    'key': os.getenv('PARKEERVAKKEN_OS_PASSWORD', 'insecure'),
+    'key': os.getenv('PARKEERVAKKEN_OBJECTSTORE_PASSWORD', 'insecure'),
     'tenant_name': 'BGE000081_Parkeren',
     'os_options': {
         'tenant_id': 'fd380ccb48444960837008800a453122',

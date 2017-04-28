@@ -6,14 +6,15 @@ database:
     POSTGRES_DB: parkeervakken
 
 importer:
-  image: build.datapunt.amsterdam.nl:5000/datapunt/parkeervakken:${ENVIRONMENT}
+  # image: build.datapunt.amsterdam.nl:5000/datapunt/parkeervakken:${ENVIRONMENT}
+  build: ../
   links:
     - database:parkeervakken_db
   environment:
     PARKEERVAKKEN_DB_NAME: parkeervakken
     PARKEERVAKKEN_DB_USER: parkeervakken
     PARKEERVAKKEN_DB_PASSWORD: insecure
-    PARKEERVAKKEN_OS_PASSWORD:
+    PARKEERVAKKEN_OBJECTSTORE_PASSWORD:
     DATAPUNT_API_URL:
 
 db-backup:
