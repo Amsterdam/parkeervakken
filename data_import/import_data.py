@@ -204,9 +204,6 @@ def table_counts(conn):
         'bm.reserveringen_mulder_schoon',
         'bv.parkeervakken',
         'bv.reserveringen',
-        'bv.reserveringen_fiscaal',
-        'bv.reserveringen_mulder',
-        'bv.reserveringen_mulder_schoon',
     ]
 
     log.debug("""

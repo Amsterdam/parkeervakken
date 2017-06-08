@@ -78,7 +78,7 @@ SELECT DISTINCT
         reserverings_tijden.begin_tijd,
         '-',
         reserverings_tijden.eind_tijd,
-	'fiscaal'
+	'fiscaal-tvm'
     ),
     reserverings_tijden.parkeer_id,
     reserverings_tijden.parkeer_id_md5,
@@ -354,7 +354,8 @@ SELECT
         'bt',
         mulder.begin_tijd,
         'et',
-        mulder.eind_tijd
+        mulder.eind_tijd,
+	'mulder'
     ),
     mulder.parkeer_id,
     mulder.parkeer_id_md5,
@@ -389,7 +390,7 @@ INSERT INTO bm.reserveringen_mulder_schoon
     "opmerkingen"
 )
 
-SELECT /* DISTINCT on (thekey) */
+SELECT DISTINCT on (thekey)
     concat(
         mulder.parkeer_id,
         '-',
@@ -397,7 +398,9 @@ SELECT /* DISTINCT on (thekey) */
         '-',
         fiscaal.begin_tijd,
         '-',
-        fiscaal.eind_tijd
+        fiscaal.eind_tijd,
+	'-',
+	'fiscaal'
     ) as thekey,
     mulder.parkeer_id,
     mulder.parkeer_id_md5,
@@ -414,8 +417,8 @@ INNER JOIN bm.reserveringen_fiscaal AS fiscaal
     ON mulder.parkeer_id_md5 = fiscaal.parkeer_id_md5 AND
        mulder.reserverings_datum = fiscaal.reserverings_datum
 WHERE mulder.begin_tijd >= fiscaal.begin_tijd AND
-      mulder.begin_tijd < fiscaal.eind_tijd AND
-      mulder.eind_tijd > fiscaal.eind_tijd;
+      mulder.begin_tijd <= fiscaal.eind_tijd AND
+      mulder.eind_tijd >= fiscaal.eind_tijd;
 
 
 INSERT INTO bm.reserveringen_mulder_schoon
@@ -441,7 +444,7 @@ SELECT /* DISTINCT on (thekey) */
         a.begin_tijd,
         '*',
         a.eind_tijd,
-        '-'
+        '-x'
     ) as thekey,
     a.parkeer_id,
     a.parkeer_id_md5,
