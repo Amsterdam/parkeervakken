@@ -1,5 +1,5 @@
 database:
-  image: build.datapunt.amsterdam.nl:5000/atlas/postgres
+  image: amsterdam/postgres
   ports:
     - "5409:5432"
   environment:

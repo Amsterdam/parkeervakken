@@ -1,5 +1,5 @@
 database:
-  image: build.datapunt.amsterdam.nl:5000/atlas/postgres
+  image: amsterdam/postgres
   environment:
     POSTGRES_PASSWORD: insecure
     POSTGRES_USER: parkeervakken
@@ -18,7 +18,7 @@ importer:
     DATAPUNT_API_URL:
 
 db-backup:
-  image: build.datapunt.amsterdam.nl:5000/atlas/postgres
+  image: amsterdam/postgres
   links:
     - database:db
   volumes:
