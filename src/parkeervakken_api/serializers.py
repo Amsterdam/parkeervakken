@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from parkeervakken_api.rest import DisplayField
 from parkeervakken_api.rest import HALSerializer
-from parkeervakken_api.models import Parkeervak
+from parkeervakken_api.models import Parkeervak, GeoSelection
 
 
 class BaseSerializer(object):
@@ -49,3 +49,11 @@ class ParkeervakSerializer(BaseSerializer, HALSerializer):
     class Meta(object):
         model = Parkeervak
         fields = '__all__'
+
+
+
+class GeoSelectionSerializer(serializers.ModelSerializer):
+    class Meta(object):
+        model = GeoSelection
+        fields = '__all__'
+

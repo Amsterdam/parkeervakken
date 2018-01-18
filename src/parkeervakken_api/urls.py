@@ -39,19 +39,13 @@ parkeervakken = ParkeerVakkenRouter()
 parkeervakken.register(r'parkeervakken', api_views.ParkeervakList,
                        base_name='parkeervak')
 
-# parkeervakken.register(r'geosearch', geo_views.MonumentViewSet,
-#                        base_name='parkeervakken')
-# parkeervakken.register(r'geoselection', geo_views.ComplexViewSet,
-#                        base_name='parkeervakken')
-#
-# parkeervakken.register(r'typeahead', search_views.TypeaheadViewSet,
-#                     base_name='typeahead')
-# parkeervakken.register(r'search', search_views.SearchParkeervakkenViewSet,
-#                     base_name='search')
+parkeervakken.register(r'geosearch', geo_views.GeoSearchViewSet,
+                       base_name='geosearch')
 
+parkeervakken.register(r'geoselection', geo_views.GeoSelectionViewSet,
+                       base_name='geoselection')
 
 urls = parkeervakken.urls
-
 
 urlpatterns = [
     url(r'^parkeervakken/', include(urls)),
