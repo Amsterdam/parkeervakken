@@ -1,34 +1,43 @@
-database:
-  image: amsterdam/postgres
-  ports:
-    - "5409:5432"
-  environment:
-    POSTGRES_PASSWORD: insecure
-    POSTGRES_DB: parkeervakken
-    POSTGRES_USER: postgres
+version: "3"
+services:
+  database:
+    image: amsterdam/postgres
+    ports:
+      - "5409:5432"
+    environment:
+      POSTGRES_PASSWORD: insecure
+      POSTGRES_DB: parkeervakken
+      POSTGRES_USER: parkeervakken
+    volumes:
+      - "~/.ssh/datapunt.key:/root/.ssh/datapunt.key"
 
-import:
-  build: ./data_import
-  links:
-    - database:parkeervakken_db
-  environment:
-    PARKEERVAKKEN_DB_NAME: parkeervakken
-    PARKEERVAKKEN_DB_USER: postgres
-    PARKEERVAKKEN_DB_PASSWORD: insecure
-    PARKEERVAKKEN_OBJECSTORE_PASSWORD: insecure
-  volumes:
-      - ./data:/app/data
+  import:
+    build: ./data_import
+    links:
+      - database:parkeervakken_db
+    environment:
+      PARKEERVAKKEN_DB_NAME: parkeervakken
+      PARKEERVAKKEN_DB_USER: parkeervakken
+      PARKEERVAKKEN_DB_PASSWORD: insecure
+      PARKEERVAKKEN_OBJECSTORE_PASSWORD: insecure
+    volumes:
+        - ./data:/app/data
 
-web:
-  build: ./web
-  ports:
-    - "8108:8000"
-  links:
-    - database:parkeervakken_db
-  volumes:
-    - $PWD/reports:/app/reports
-  environment:
-    SECRET_KEY: hoi
-    PARKEERVAKKEN_DB_NAME: parkeervakken
-    PARKEERVAKKEN_DB_USER: postgres
-    PARKEERVAKKEN_DB_PASSWORD: insecure
+  web:
+    build: ./src
+    ports:
+      - "8108:8000"
+    links:
+      - database
+    volumes:
+      - $PWD/reports:/app/reports
+    environment:
+      - SECRET_KEY=insecure
+      - DATABASE_NAME=parkeervakken
+      - DATABASE_USER=parkeervakken
+      - DATABASE_PASSWORD=insecure
+      - JWT_SHARED_SECRET_KEY=insecure1234567890
+      - UWSGI_HTTP=0.0.0.0:8000
+      - UWSGI_MODULE=parkeervakken_api.wsgi
+      - UWSGI_CALLABLE=application
+      - UWSGI_MASTER=1

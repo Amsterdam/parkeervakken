@@ -17,8 +17,11 @@ WORKDIR /app
 COPY requirements.txt /app/
 
 RUN pip install --no-cache-dir -r requirements.txt
+COPY . /app/
 
 USER datapunt
-COPY parkeervakken_api /app/
-CMD /app/docker-entrypoint.sh
+
+RUN export DJANGO_SETTINGS_MODULE=parkeervakken_api.settings
+
+CMD uwsgi
 
