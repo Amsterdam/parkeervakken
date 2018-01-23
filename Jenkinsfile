@@ -52,6 +52,18 @@ if (BRANCH == "master") {
         }
     }
 
+    node {
+        stage("Deploy to ACC") {
+            tryStep "deployment", {
+                build job: 'Subtask_Openstack_Playbook',
+                parameters: [
+                    [$class: 'StringParameterValue', name: 'INVENTORY', value: 'acceptance'],
+                    [$class: 'StringParameterValue', name: 'PLAYBOOK', value: 'deploy-parkeervakken.yml'],
+                ]
+            }
+        }
+    }
+
     stage('Waiting for approval') {
         slackSend channel: '#ci-channel', color: 'warning', message: 'Parkeervakken is waiting for Production Release - please confirm'
         input "Deploy to Production?"
