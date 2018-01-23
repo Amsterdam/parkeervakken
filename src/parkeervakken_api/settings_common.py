@@ -109,7 +109,7 @@ REST_FRAMEWORK = dict(
         'rest_framework.renderers.BrowsableAPIRenderer'
     ),
     DEFAULT_FILTER_BACKENDS=(
-        'rest_framework.filters.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
         # 'rest_framework.filters.OrderingFilter',
 
     ),

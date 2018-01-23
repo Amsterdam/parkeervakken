@@ -54,6 +54,8 @@ DATABASES = {
     'default': DATABASE_OPTIONS[get_database_key()]
 }
 
+HEALTH_MODEL = 'parkeervakken_api.Parkeervak'
+
 # The following JWKS data was obtained in the authz project :  jwkgen -create -alg ES256
 # This is a test public/private key def and added for testing .
 JWKS_TEST_KEY = """

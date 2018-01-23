@@ -73,7 +73,7 @@ class HALPagination(pagination.PageNumberPagination):
 class DatapuntViewSet(DetailSerializerMixin, viewsets.ReadOnlyModelViewSet):
     renderer_classes = DEFAULT_RENDERERS
     pagination_class = HALPagination
-    filter_backends = (filters.DjangoFilterBackend,)
+    filter_backends = (filters.SearchFilter)
 
 
 class DisplayField(serializers.Field):

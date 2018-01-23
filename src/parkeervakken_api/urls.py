@@ -33,15 +33,11 @@ class ParkeervakkenView(routers.APIRootView):
 class ParkeerVakkenRouter(routers.DefaultRouter):
     APIRootView = ParkeervakkenView
 
-
 parkeervakken = ParkeerVakkenRouter()
-
 parkeervakken.register(r'parkeervakken', api_views.ParkeervakList,
                        base_name='parkeervak')
-
 parkeervakken.register(r'geosearch', geo_views.GeoSearchViewSet,
                        base_name='geosearch')
-
 parkeervakken.register(r'geoselection', geo_views.GeoSelectionViewSet,
                        base_name='geoselection')
 
@@ -49,6 +45,7 @@ urls = parkeervakken.urls
 
 urlpatterns = [
     url(r'^parkeervakken/', include(urls)),
+    url(r'^status/', include('parkeervakken_api.health.urls'))
 ]
 
 @api_view()
