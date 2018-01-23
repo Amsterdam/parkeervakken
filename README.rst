@@ -2,9 +2,9 @@ Parkeervakken
 =============
 
 Imports parkeervakken shape file into database.
-provides the WFS services with the actual parkingsport dataset 
+provides the WFS services with the actual parkingsport dataset
 
-- ALL parking spots. 
+- ALL parking spots.
 - parking spot data like (FISCAAL / MULDER) ficscaal means non free spots. Mulder are spots for handicaped people.
 - TVM ( tijdelijke verkeersmaatregelen ) dataset.
 - park sign information. (Electric / laden lossen etc)
@@ -47,7 +47,7 @@ Load the data
 The data pipeline overview
 ==========================
 
- 1. Raw shapafiles get loaded in the 'his' schema.
+ 1. Raw shapefiles get loaded in the 'his' schema.
 
  2. Some business logic and transformations are applied in the  'bm' schema
 
