@@ -18,9 +18,8 @@ class Parkeervak(models.Model):
     bord = models.CharField(max_length=50, null=True)
     geom = models.MultiPolygonField(name='geom')
 
-    # def __str__(self):
-    #
-    #     return f"Parkeervak {self.id} te {self.straatnaam}"
+    def __str__(self):
+        return f"Parkeervak {self.parkeer_id} te {self.straatnaam}"
 
 
 class GeoSelection(models.Model):

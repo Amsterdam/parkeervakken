@@ -51,7 +51,6 @@ class ParkeervakSerializer(BaseSerializer, HALSerializer):
         fields = '__all__'
 
 
-
 class GeoSelectionSerializer(serializers.ModelSerializer):
     class Meta(object):
         model = GeoSelection
