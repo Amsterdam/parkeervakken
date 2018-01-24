@@ -11,22 +11,10 @@ services:
     volumes:
       - "~/.ssh/datapunt.key:/root/.ssh/datapunt.key"
 
-  import:
-    build: ./import
-    links:
-      - database:parkeervakken_db
-    environment:
-      PARKEERVAKKEN_DB_NAME: parkeervakken
-      PARKEERVAKKEN_DB_USER: parkeervakken
-      PARKEERVAKKEN_DB_PASSWORD: insecure
-      PARKEERVAKKEN_OBJECSTORE_PASSWORD: insecure
-    volumes:
-        - ./data:/app/data
-
   web:
-    build: ./src
+    build: ./web
     ports:
-      - "8108:8000"
+      - "8130:8000"
     links:
       - database
     volumes:
