@@ -24,9 +24,9 @@ node {
 
     stage('Test') {
         tryStep "test", {
-            sh "docker-compose -p parkeervakken -f deploy/test/docker-compose.yml build"
+            sh "docker-compose -p parkeervakken -f web/deploy/test/docker-compose.yml build"
         }, {
-            sh "docker-compose -p parkeervakken -f deploy/test/docker-compose.yml down"
+            sh "docker-compose -p parkeervakken -f web/deploy/test/docker-compose.yml down"
         }
     }
 
