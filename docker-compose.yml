@@ -12,7 +12,7 @@ services:
       - "~/.ssh/datapunt.key:/root/.ssh/datapunt.key"
 
   import:
-    build: ./data_import
+    build: ./import
     links:
       - database:parkeervakken_db
     environment:
