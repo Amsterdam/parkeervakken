@@ -9,7 +9,7 @@ import pathlib
 
 import psycopg2
 import logging
-
+import os
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -18,6 +18,8 @@ log = logging.getLogger(__name__)
 # The way file names are expected to be.
 stadsdeel_c = re.compile(r'^(?P<stadsdeel>[a-zA-Z-]*)_parkeerhaven.*_'
                          r'(?P<date>[0-9]{8})$')
+
+directory = os.path.dirname(os.path.realpath(__file__))
 
 
 def setup_argparse():
@@ -184,8 +186,8 @@ def import_data(database,
     table_counts(conn)
 
     files = [
-        'import_his_bm.sql',
-        'import_bm_bv.sql',
+        os.path.join(directory, 'import_his_bm.sql'),
+        os.path.join(directory, 'import_bm_bv.sql'),
     ]
 
     for filename in files:
@@ -583,10 +585,10 @@ def create_tables(database, user, password, host, port):
                             port=port)
 
     files = [
-        'create_his_tables.sql',
-        'create_bm_tables.sql',
-        'create_bv_tables.sql',
-        'create_views.sql',
+        os.path.join(directory, 'create_his_tables.sql'),
+        os.path.join(directory, 'create_bm_tables.sql'),
+        os.path.join(directory, 'create_bv_tables.sql'),
+        os.path.join(directory, 'create_views.sql'),
     ]
 
     for filename in files:

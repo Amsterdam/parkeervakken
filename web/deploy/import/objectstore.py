@@ -14,7 +14,7 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("swiftclient").setLevel(logging.WARNING)
 
-destination_dir = "data/"
+destination_dir = "/data/"
 
 assert os.getenv('PARKEERVAKKEN_OBJECTSTORE_PASSWORD')
 
@@ -49,10 +49,10 @@ def save_file(time, object_meta_data):
     latest_zip = get_store_object(object_meta_data)
 
     # create the directory inclusive nonexisting path
-    os.makedirs('data/parkeren/', exist_ok=True)
+    os.makedirs('/data/parkeren/', exist_ok=True)
 
     # save output to file!
-    with open('data/parkeren/{}'.format(zipname), 'wb') as outputzip:
+    with open('/data/parkeren/{}'.format(zipname), 'wb') as outputzip:
         outputzip.write(latest_zip)
 
 

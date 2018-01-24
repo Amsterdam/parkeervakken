@@ -7,9 +7,14 @@ EXPOSE 8000
 
 RUN apt-get install --fix-missing -y libgeos-dev && \
         apt-get install -y netcat && \
+       apt-get install -y postgis && \
 	adduser --system datapunt && \
 	mkdir -p /static && \
+	mkdir -p /data && \
+	mkdir -p /unzipped && \
 	chown datapunt /static && \
+	chown datapunt /data && \
+	chown datapunt /unzipped && \
 	pip install uwsgi
 
 WORKDIR /app

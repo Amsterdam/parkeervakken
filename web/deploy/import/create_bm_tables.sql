@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS bm.parkeervakken (
     "aantal" numeric(10,0),
     "e_type" varchar(5),
     "bord" varchar(50)
-
 );
 
 SELECT AddGeometryColumn('bm','parkeervakken','geom','0','MULTIPOLYGON',2);
