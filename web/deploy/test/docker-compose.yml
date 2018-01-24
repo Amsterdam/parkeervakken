@@ -10,7 +10,7 @@ importer:
   links:
     - database:parkeervakken_db
   environment:
-    PARKEERVAKKEN_DB_NAME: parkeervakken
-    PARKEERVAKKEN_DB_USER: parkeervakken
-    PARKEERVAKKEN_DB_PASSWORD: insecure
+    DATABASE_NAME: parkeervakken
+    DATABASE_USER: parkeervakken
+    DATABASE_PASSWORD: insecure
     PARKEERVAKKEN_OS_PASSWORD:

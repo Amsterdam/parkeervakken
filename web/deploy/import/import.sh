@@ -3,10 +3,10 @@
 set -u
 set -e
 
-python /import_data.py --user $DB_NAME \
-		       --password $DB_PASSWORD \
-		       --host $DATABASE_PORT_5432_TCP_ADDR \
-		       --port $DATABASE_PORT_5432_TCP_PORT \
+python /deploy/import_data.py --user $DATABASE_USER \
+		       --password $DATABASE_PASSWORD \
+		       --host database \
+		       --port 5432 \
 		       --database parkeervakken \
 		       update \
 		       --source /app/diva

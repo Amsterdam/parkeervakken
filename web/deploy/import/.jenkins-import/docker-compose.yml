@@ -1,37 +1,25 @@
-database:
-  image: amsterdam/postgres
-  environment:
-    POSTGRES_PASSWORD: insecure
-    POSTGRES_USER: parkeervakken
-    POSTGRES_DB: parkeervakken
+version: "3.0"
+services:
+  database:
+    image: amsterdam/postgres
+    environment:
+      POSTGRES_PASSWORD: insecure
+      POSTGRES_USER: parkeervakken
+      POSTGRES_DB: parkeervakken
+    volumes:
+      - ./backups:/tmp/backups
 
-importer:
-  image: build.datapunt.amsterdam.nl:5000/datapunt/parkeervakken:${ENVIRONMENT}
-  # build: ../
-  links:
-    - database:parkeervakken_db
-  environment:
-    PARKEERVAKKEN_DB_NAME: parkeervakken
-    PARKEERVAKKEN_DB_USER: parkeervakken
-    PARKEERVAKKEN_DB_PASSWORD: insecure
-    PARKEERVAKKEN_OBJECTSTORE_PASSWORD:
-    DATAPUNT_API_URL:
+  importer:
+    image: build.datapunt.amsterdam.nl:5000/datapunt/parkeervakken:${ENVIRONMENT}
+    # build: ../
+    links:
+      - database:parkeervakken_db
+    environment:
+      DATABASE_NAME: parkeervakken
+      DATABASE_USER: parkeervakken
+      DATABASE_PASSWORD: insecure
+      PARKEERVAKKEN_OBJECTSTORE_PASSWORD:
+      DATAPUNT_API_URL:
+    command: >
+      bash -c "/deploy/import/import.sh"
 
-db-backup:
-  image: amsterdam/postgres
-  links:
-    - database:db
-  volumes:
-    - ./backups:/tmp/backups
-  command: >
-    bash -c "echo db:5432:parkeervakken:parkeervakken:insecure > ~/.pgpass \
-            && chmod 600 ~/.pgpass \
-            && pg_dump --clean \
-                        -Fc \
-                        -U parkeervakken \
-                        -h db -p 5432 \
-                        parkeervakken > /tmp/backups/database.dump"
-
-# To test restore
-# docker exec -it jenkins_database_1 bash
-# pg_restore -U parkeervakken -c -d parkeervakken /tmp/backups/database.dump
