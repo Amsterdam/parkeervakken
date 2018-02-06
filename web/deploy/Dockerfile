@@ -7,7 +7,7 @@ RUN apt-get install -y postgis && \
 	mkdir -p /data && \
 	mkdir -p /unzipped && \
 	chown datapunt /data && \
-	chown datapunt /unzipped && \
+	chown datapunt /unzipped
 
 USER datapunt
 
