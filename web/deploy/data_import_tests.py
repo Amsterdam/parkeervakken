@@ -42,7 +42,7 @@ CREATE TABLE "public"."s_parkeervakken" (gid serial,
 "tvm_eindt" varchar(20),
 "tvm_opmerk" varchar(100));
 ALTER TABLE "public"."s_parkeervakken" ADD PRIMARY KEY (gid);
-SELECT AddGeometryColumn('public','s_parkeervakken','geom','0','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('public','s_parkeervakken','geom','28992','MULTIPOLYGON',2);
 INSERT INTO "public"."s_parkeervakken" ("parkeer_id","buurtcode","straatnaam","soort","type","aantal","kenteken","e_type","bord","begintijd1","eindtijd1","ma_vr","ma_za","zo","ma","di","wo","do","vr","za","eindtijd2","begintijd2","opmerking","tvm_begind","tvm_eindd","tvm_begint","tvm_eindt","tvm_opmerk",geom) VALUES ('A1234','','','','','1',NULL,NULL,NULL,NULL,NULL,'f','f','f','f','f','f','f','f','f',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'01060000000100000001030000000100000005000000713D0AD733D7FC401F85EB5197821D4148E17A142ED7FC409A999999AB821D410AD7A3704DD7FC40AE47E17AB9821D41E17A14AE57D7FC40A4703D0A98821D41713D0AD733D7FC401F85EB5197821D41');
 INSERT INTO "public"."s_parkeervakken" ("parkeer_id","buurtcode","straatnaam","soort","type","aantal","kenteken","e_type","bord","begintijd1","eindtijd1","ma_vr","ma_za","zo","ma","di","wo","do","vr","za","eindtijd2","begintijd2","opmerking","tvm_begind","tvm_eindd","tvm_begint","tvm_eindt","tvm_opmerk",geom) VALUES ('A1235','','','','','1',NULL,NULL,NULL,NULL,NULL,'f','f','f','f','f','f','f','f','f',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'01060000000100000001030000000100000007000000E17A14AE57D7FC40A4703D0A98821D41CDCCCCCC5CD7FC4048E17A1487821D41666666665ED7FC400000000082821D418FC2F5283CD7FC401F85EB5181821D41A4703D0A37D7FC408FC2F5288C821D41713D0AD733D7FC401F85EB5197821D41E17A14AE57D7FC40A4703D0A98821D41');
 CREATE INDEX ON "public"."s_parkeervakken" USING GIST ("geom");
@@ -103,7 +103,7 @@ class TestImport(TestCase):
         "tvm_eindt" varchar(20),
         "tvm_opmerk" varchar(100)
         );
-        SELECT AddGeometryColumn(%(schema)s,%(table)s,'geom','0','MULTIPOLYGON',2);
+        SELECT AddGeometryColumn(%(schema)s,%(table)s,'geom','28992','MULTIPOLYGON',2);
         ALTER TABLE "public"."h_parkeervakken"
             ADD COLUMN "stadsdeel" varchar(40),
             ADD COLUMN "goedkeurings_datum" timestamp without time zone;

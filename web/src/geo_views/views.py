@@ -5,7 +5,7 @@ from django.db import connection
 
 from geo_views.geo_params import get_request_coord
 from parkeervakken_api.models import Parkeervak
-from parkeervakken_api.serializers import ParkeervakSerializer, GeoSelectionSerializer
+from parkeervakken_api.serializers import SimpleParkeervakSerializer, GeoSelectionSerializer
 
 
 class GeoSearchViewSet(viewsets.ViewSet):
@@ -25,7 +25,7 @@ class GeoSearchViewSet(viewsets.ViewSet):
 
         try:
             selection = Parkeervak.objects.extra(where=["ST_Contains(geom, ST_GeomFromText('POINT(%s %s)', 28992))"], params=[x, y]).all()[0]
-            serializer = ParkeervakSerializer(selection)
+            serializer = SimpleParkeervakSerializer(selection)
             return Response([serializer.data])
         except IndexError:
             return Response([])

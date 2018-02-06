@@ -38,7 +38,7 @@ CREATE TABLE his.parkeervakken (
     "tvm_opmerk" varchar(100)
 );
 
-SELECT AddGeometryColumn('his','parkeervakken','geom','0','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('his','parkeervakken','geom','28992','MULTIPOLYGON',2);
 
 ALTER TABLE "his"."parkeervakken"
     ADD COLUMN "stadsdeel" varchar(40),
