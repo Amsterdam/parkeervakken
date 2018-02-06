@@ -30,8 +30,3 @@ six==1.11.0
 typing==3.6.2
 uritemplate==3.0.0
 urllib3==1.22
-
-# Voor import:
-python-dateutil==2.6.0
-python-keystoneclient==3.8.0
-python-swiftclient==3.2.0

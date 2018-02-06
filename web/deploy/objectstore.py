@@ -49,10 +49,10 @@ def save_file(time, object_meta_data):
     latest_zip = get_store_object(object_meta_data)
 
     # create the directory inclusive nonexisting path
-    os.makedirs('/data/parkeren/', exist_ok=True)
+    os.makedirs(f'{destination_dir}parkeren/', exist_ok=True)
 
     # save output to file!
-    with open('/data/parkeren/{}'.format(zipname), 'wb') as outputzip:
+    with open(f'{destination_dir}parkeren/{zipname}', 'wb') as outputzip:
         outputzip.write(latest_zip)
 
 

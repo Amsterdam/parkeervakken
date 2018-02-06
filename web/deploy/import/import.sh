@@ -1,64 +1,33 @@
-#!/bin/bash
+#!/bin/sh
 
-set -u
 set -e
+set -u
 
-DATABASE_HOST="database"
-DATABASE_PORT=5432
+DIR="$(dirname $0)"
 
-# LOCAL TESTING:
-# DATABASE_HOST="127.0.0.1"
-# DATABASE_PORT=5409
+dc() {
+	docker-compose -p parkeervakken -f ${DIR}/docker-compose.yml $*
+}
 
-echo $DATABASE_HOST
-echo $DATABASE_PORT
+trap 'dc kill ; dc rm -f' EXIT
 
-# Get files stored in the objectstore
-echo "Getting zip files from objectstore"
-python /deploy/import/objectstore.py
+echo "Removing any previous backups"
+rm -rf ${DIR}/backups
+mkdir -p ${DIR}/backups
 
-echo 'unzipping latest source shape file'
-unzip -o $(ls -Art /data/parkeren/* | grep [0-9].zip | tail -n 1) -d /unzipped/
+echo "Building dockers"
+dc down
+dc pull
+dc build
 
-count=$(ls /unzipped/*shp -l | wc -l)
+echo "Starting and migrating db"
+dc up -d database
+dc run importer /deploy/docker-wait.sh
 
-echo $count shapefiles
+echo "Importing data"
+dc run --rm importer
 
-if [ "$count" -lt '8' ]; then
-    echo "missing shp files";
-    exit
-fi
+echo "Running backups"
+dc exec -T database backup-db.sh parkeervakken
 
-unzip -o $(ls -Art /data/parkeren/*niet*fiscaal*.zip | tail -n 1) -d /unzipped/nietfiscaal
-
-echo 'clear / build tables'
-# clear and or create tables
-python /deploy/import/import_data.py --user $DATABASE_USER \
-		      --password $DATABASE_PASSWORD \
-		      --host $DATABASE_HOST \
-		      --port $DATABASE_PORT \
-		      --database parkeervakken \
-                      initialize
-
-echo 'Load parkeer data'
-# run import / update data
-python /deploy/import/import_data.py --user $DATABASE_USER \
-		      --password $DATABASE_PASSWORD \
-		      --host $DATABASE_HOST \
-		      --port $DATABASE_PORT \
-		      --database parkeervakken \
-                      update \
-                      --source /unzipped
-
-echo 'load parkeer NIET FISCAAL data'
-# run import / update data
-python /deploy/import/import_data.py --user $DATABASE_USER \
-		      --password $DATABASE_PASSWORD \
-		      --host $DATABASE_HOST \
-		      --port $DATABASE_PORT \
-		      --database parkeervakken \
-                      update \
-                      --source /unzipped/nietfiscaal \
-                      --skip-dates \
-
-echo 'parkeerdata DONE'
+echo "Done"

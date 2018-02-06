@@ -10,8 +10,10 @@ services:
       - ./backups:/tmp/backups
 
   importer:
-    image: build.datapunt.amsterdam.nl:5000/datapunt/parkeervakken:${ENVIRONMENT}
-    # build: ../../../
+    build:
+      context: ../
+      args:
+        - ENVIRONMENT=${ENVIRONMENT}
     links:
       - database:parkeervakken_db
     environment:
@@ -20,6 +22,4 @@ services:
       DATABASE_PASSWORD: insecure
       PARKEERVAKKEN_OBJECTSTORE_PASSWORD:
       DATAPUNT_API_URL:
-    command: >
-      bash -c "/deploy/import/import.sh"
 

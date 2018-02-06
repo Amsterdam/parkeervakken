@@ -17,8 +17,6 @@ services:
       - "8130:8000"
     links:
       - database
-    volumes:
-      - $PWD/reports:/app/reports
     environment:
       - SECRET_KEY=insecure
       - DATABASE_NAME=parkeervakken

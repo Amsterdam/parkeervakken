@@ -22,7 +22,7 @@ def get_request_coord(query_params):
         y = float(query_params['y'])
         return x, y
     else:
-        return None
+        return None, None
 
 
 def _convert_coords(lon, lat, orig_srid, dest_srid):
