@@ -9,13 +9,12 @@ RUN apt-get install -y postgis && \
 	chown datapunt /data && \
 	chown datapunt /unzipped
 
-USER datapunt
-
 WORKDIR /app
 
 COPY import-requirements.txt /app/
 RUN pip install --no-cache-dir -r import-requirements.txt
 
-COPY . /deploy/
+USER datapunt
 
+COPY . /deploy/
 CMD /deploy/import.sh
