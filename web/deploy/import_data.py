@@ -136,6 +136,13 @@ def find_latest_date(source, file_type):
     return last_date
 
 
+
+import_files = [
+    os.path.join(directory, 'import_his_bm.sql'),
+    os.path.join(directory, 'import_bm_bv.sql'),
+]
+
+
 def import_data(database,
                 user,
                 password,
@@ -185,13 +192,7 @@ def import_data(database,
 
     table_counts(conn)
 
-    files = [
-        os.path.join(directory, 'import_his_bm.sql'),
-        os.path.join(directory, 'import_bm_bv.sql'),
-    ]
-
-    for filename in files:
-        execute_sql(conn, filename)
+    execute_sql(import_files, database, user, password, host, port)
 
     table_counts(conn)
 
@@ -569,8 +570,9 @@ def table_exists(conn, cur, table, schema):
     return len(results) > 0
 
 
-def create_tables(database, user, password, host, port):
+def execute_sql(files, database, user, password, host, port):
     """
+    :type files: list of files
     :type database: str
     :type user: str
     :type password: str
@@ -584,81 +586,33 @@ def create_tables(database, user, password, host, port):
                             host=host,
                             port=port)
 
-    files = [
-        os.path.join(directory, 'create_his_tables.sql'),
-        os.path.join(directory, 'create_bm_tables.sql'),
-        os.path.join(directory, 'create_bv_tables.sql'),
-    ]
-
     for filename in files:
-        execute_sql(conn, filename)
+        log.debug('SQL: %s', filename)
+
+        with open(filename) as f:
+            stmts = f.read()
+
+            try:
+                with conn.cursor() as c:
+                    c.execute(stmts)
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                conn.close()
+                raise
 
 
-def create_views(database, user, password, host, port):
-    """
-    :type database: str
-    :type user: str
-    :type password: str
-    :type host: str
-    :type port: int
-    """
-
-    conn = psycopg2.connect(database=database,
-                            user=user,
-                            password=password,
-                            host=host,
-                            port=port)
-
-    files = [
-        os.path.join(directory, 'create_views.sql'),
-    ]
-
-    for filename in files:
-        execute_sql(conn, filename)
-
-
-def drop_views(database, user, password, host, port):
-    """
-    :type database: str
-    :type user: str
-    :type password: str
-    :type host: str
-    :type port: int
-    """
-
-    conn = psycopg2.connect(database=database,
-                            user=user,
-                            password=password,
-                            host=host,
-                            port=port)
-
-    files = [
-        os.path.join(directory, 'drop_views.sql'),
-    ]
-
-    for filename in files:
-        execute_sql(conn, filename)
-
-
-def execute_sql(conn, filename):
-    """
-    :type conn: a Connection object
-    :type filename: str
-    """
-
-    log.debug('SQL: %s', filename)
-
-    with open(filename) as f:
-        stmts = f.read()
-
-        try:
-            with conn.cursor() as c:
-                c.execute(stmts)
-            conn.commit()
-        except Exception:
-            conn.rollback()
-            conn.close()
-            raise
+create_tables_files = [
+    os.path.join(directory, 'create_his_tables.sql'),
+    os.path.join(directory, 'create_bm_tables.sql'),
+    os.path.join(directory, 'create_bv_tables.sql'),
+]
+create_views_files = [
+    os.path.join(directory, 'create_views.sql'),
+]
+drop_views_files = [
+    os.path.join(directory, 'drop_views.sql'),
+]
 
 
 def main():
@@ -675,11 +629,11 @@ def main():
     }
 
     if command == 'init':
-        create_tables(**database_credentials)
+        execute_sql(create_tables_files, **database_credentials)
 
     elif command == 'update':
 
-        drop_views(**database_credentials)
+        execute_sql(drop_views_files, **database_credentials)
 
         source = pathlib.Path(args.source)
         skip_import = args.skip_import
@@ -692,7 +646,7 @@ def main():
                     interval=interval,
                     **database_credentials)
 
-        create_views(**database_credentials)
+        execute_sql(create_views_files, **database_credentials)
 
 
 if __name__ == '__main__':
