@@ -23,8 +23,10 @@ class GeoSearchViewSet(viewsets.ViewSet):
         if not x or not y:
             return Response([])
 
+# https://gis.stackexchange.com/questions/206378/st-geomfromtext-not-found
+
         try:
-            selection = Parkeervak.objects.extra(where=["ST_Contains(geom, ST_GeomFromText('POINT(%s %s)', 28992))"], params=[x, y]).all()[0]
+            selection = Parkeervak.objects.extra(where=["ST_Contains(geometrie, ST_GeomFromText('POINT(%s %s)', 28992))"], params=[x, y]).all()[0]
             serializer = SimpleParkeervakSerializer(selection)
             return Response([serializer.data])
         except IndexError:
@@ -42,13 +44,13 @@ class GeoSelectionViewSet(viewsets.ViewSet):
 
     def list(self, request):
         if 'straatnaam' in request.query_params:
-            sql = """SELECT Count(*) as aantal, ST_Multi(ST_Union(p.geom)) as singleshape
-FROM parkeervakken p WHERE straatnaam = %s"""
+            sql = """SELECT Count(*) as aantal, ST_Multi(ST_Union(p.geometrie)) as singleshape
+FROM bv.geo_parkeervakken p WHERE straatnaam = %s"""
             params = (request.query_params['straatnaam'],)
         elif 'ids' in request.query_params:
             ids = request.query_params['ids'].split(',')
-            sql = """SELECT Count(*) as aantal, ST_Multi(ST_Union(p.geom)) as singleshape
-FROM parkeervakken p WHERE parkeer_id in (%s)"""
+            sql = """SELECT Count(*) as aantal, ST_Multi(ST_Union(p.geometrie)) as singleshape
+FROM bv.geo_parkeervakken p WHERE id in (%s)"""
             format_strings = ','.join(['%s'] * len(ids))
             sql = sql % format_strings
             params = tuple(ids)

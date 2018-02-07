@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS bm.parkeervakken (
     "bord" varchar(50)
 );
 
-SELECT AddGeometryColumn('bm','parkeervakken','geom','28992','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('bm','parkeervakken','geom','0','MULTIPOLYGON',2);
 
 DROP TABLE IF EXISTS bm.reserveringen_fiscaal CASCADE;
 

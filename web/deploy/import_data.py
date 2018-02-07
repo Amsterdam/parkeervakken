@@ -588,7 +588,52 @@ def create_tables(database, user, password, host, port):
         os.path.join(directory, 'create_his_tables.sql'),
         os.path.join(directory, 'create_bm_tables.sql'),
         os.path.join(directory, 'create_bv_tables.sql'),
+    ]
+
+    for filename in files:
+        execute_sql(conn, filename)
+
+
+def create_views(database, user, password, host, port):
+    """
+    :type database: str
+    :type user: str
+    :type password: str
+    :type host: str
+    :type port: int
+    """
+
+    conn = psycopg2.connect(database=database,
+                            user=user,
+                            password=password,
+                            host=host,
+                            port=port)
+
+    files = [
         os.path.join(directory, 'create_views.sql'),
+    ]
+
+    for filename in files:
+        execute_sql(conn, filename)
+
+
+def drop_views(database, user, password, host, port):
+    """
+    :type database: str
+    :type user: str
+    :type password: str
+    :type host: str
+    :type port: int
+    """
+
+    conn = psycopg2.connect(database=database,
+                            user=user,
+                            password=password,
+                            host=host,
+                            port=port)
+
+    files = [
+        os.path.join(directory, 'drop_views.sql'),
     ]
 
     for filename in files:
@@ -634,6 +679,8 @@ def main():
 
     elif command == 'update':
 
+        drop_views(**database_credentials)
+
         source = pathlib.Path(args.source)
         skip_import = args.skip_import
         skip_dates = args.skip_dates
@@ -644,6 +691,8 @@ def main():
                     skip_dates=skip_dates,
                     interval=interval,
                     **database_credentials)
+
+        create_views(**database_credentials)
 
 
 if __name__ == '__main__':

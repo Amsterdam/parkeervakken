@@ -22,8 +22,8 @@ CREATE TABLE bv.parkeervakken (
 
 );
 
-SELECT AddGeometryColumn('bv','parkeervakken','geom','28992','MULTIPOLYGON',2);
-SELECT AddGeometryColumn('bv','parkeervakken','geo_id','28992','POINT',2);
+SELECT AddGeometryColumn('bv','parkeervakken','geom','0','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('bv','parkeervakken','geo_id','0','POINT',2);
 
 CREATE TABLE IF NOT EXISTS bv.reserveringen (
     "reserverings_key_md5" text PRIMARY KEY,
