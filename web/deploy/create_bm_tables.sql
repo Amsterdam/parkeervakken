@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS bm.reserveringen_fiscaal (
     "eind_datum" date,
     "begin_tijd" time without time zone,
     "eind_tijd" time without time zone,
-    "opmerkingen" varchar(100)
+    "opmerkingen" varchar(100),
+    "reservering_bron" varchar(100)
 );
 
 DROP TABLE IF EXISTS bm.reserveringen_mulder CASCADE;
@@ -49,7 +50,8 @@ CREATE TABLE IF NOT EXISTS bm.reserveringen_mulder (
     "eind_datum" date DEFAULT NULL,
     "begin_tijd" time without time zone,
     "eind_tijd" time without time zone,
-    "opmerkingen" varchar(100)
+    "opmerkingen" varchar(100),
+    "reservering_bron" varchar(100)
 );
 
 DROP TABLE IF EXISTS bm.reserveringen_mulder_schoon CASCADE;
@@ -66,7 +68,8 @@ CREATE TABLE IF NOT EXISTS bm.reserveringen_mulder_schoon (
     "eind_datum" date DEFAULT NULL,
     "begin_tijd" time without time zone,
     "eind_tijd" time without time zone,
-    "opmerkingen" varchar(100)
+    "opmerkingen" varchar(100),
+    "reservering_bron" varchar(100)
 );
 
 DROP TABLE IF EXISTS bm.datums CASCADE;

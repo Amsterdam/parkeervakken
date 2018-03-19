@@ -2,6 +2,7 @@
 
 set -u
 set -e
+set -x
 
 DATABASE_HOST="database"
 DATABASE_PORT=5432

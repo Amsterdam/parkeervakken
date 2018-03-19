@@ -59,7 +59,8 @@ INSERT INTO bv.reserveringen
     eind_datum,
     begin_tijd,
     eind_tijd,
-    opmerkingen
+    opmerkingen,
+    reservering_bron
 )
 SELECT /* DISTINCT on (reserverings_key_md5) */
     *
@@ -78,7 +79,8 @@ INSERT INTO bv.reserveringen
     eind_datum,
     begin_tijd,
     eind_tijd,
-    opmerkingen
+    opmerkingen,
+    reservering_bron
 )
 SELECT /* DISTINCT ON (reserverings_key_md5) */
     *

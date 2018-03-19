@@ -45,14 +45,21 @@ def get_store_object(object_meta_data):
 
 def save_file(time, object_meta_data):
     zipname = object_meta_data['name'].split('/')[-1]
-    log.info('Downloading latest: %s %s', time, zipname)
-    latest_zip = get_store_object(object_meta_data)
 
     # create the directory inclusive nonexisting path
     os.makedirs(f'{destination_dir}parkeren/', exist_ok=True)
 
+    target = f'{destination_dir}parkeren/{zipname}'
+
+    if os.path.isfile(target):
+        log.debug('Already downloaded %s', target)
+        return
+
+    log.info('Downloading latest: %s %s', time, zipname)
+    latest_zip = get_store_object(object_meta_data)
+
     # save output to file!
-    with open(f'{destination_dir}parkeren/{zipname}', 'wb') as outputzip:
+    with open(target, 'wb') as outputzip:
         outputzip.write(latest_zip)
 
 

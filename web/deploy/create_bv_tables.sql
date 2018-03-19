@@ -37,7 +37,8 @@ CREATE TABLE IF NOT EXISTS bv.reserveringen (
     "eind_datum" date DEFAULT NULL,
     "begin_tijd" time without time zone,
     "eind_tijd" time without time zone,
-    "opmerkingen" varchar(100)
+    "opmerkingen" varchar(100),
+    "reservering_bron" varchar(100)
 );
 
 ALTER TABLE bv.reserveringen
