@@ -30,11 +30,19 @@ class ParkeervakFilter(FilterSet):
             'aantal',
             'type',
             'e_type',
+            'bord',
         )
 
 
 class ParkeervakList(DatapuntViewSet):
-    queryset = Parkeervak.objects.all()
+    """Filter parkeervakken.
+
+    Electrische voertuigenvoorbeeld:
+
+    https://api.data.amsterdam.nl/parkeervakken/parkeervakken/?buurtcode=&stadsdeel=&straatnaam=&soort=&aantal=&type=&e_type=E8&bord=Opladen+elektrische+voertuigen
+
+    """
+    queryset = Parkeervak.objects.all().order_by('id')
     serializer_detail_class = ParkeervakSerializer
     serializer_class = ParkeervakSerializer
     filter_backends = (DjangoFilterBackend,)
