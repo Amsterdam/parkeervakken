@@ -25,7 +25,7 @@ node {
 
     stage('Test') {
         tryStep "test", {
-            sh "docker-compose -p parkeervakken -f web/deploy/test/test.sh"
+            sh "web/deploy/test/test.sh"
         }
     }
 
