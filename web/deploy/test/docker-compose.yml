@@ -17,7 +17,7 @@ services:
       DATABASE_USER: parkeervakken
       DATABASE_PASSWORD: insecure
       PARKEERVAKKEN_OS_PASSWORD:
-      ENVIRONMENT:
+      ENVIRONMENT: test
     volumes:
         - ./run_tests.sh:/app/run_tests.sh
     command: /app/run_tests.sh
