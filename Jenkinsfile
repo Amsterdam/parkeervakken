@@ -18,15 +18,14 @@ def tryStep(String message, Closure block, Closure tearDown = null) {
 
 
 node {
+
     stage("Checkout") {
         checkout scm
     }
 
     stage('Test') {
         tryStep "test", {
-            sh "docker-compose -p parkeervakken -f web/deploy/test/docker-compose.yml build"
-        }, {
-            sh "docker-compose -p parkeervakken -f web/deploy/test/docker-compose.yml down"
+            sh "docker-compose -p parkeervakken -f web/deploy/test/test.sh"
         }
     }
 

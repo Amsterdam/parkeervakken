@@ -5,26 +5,24 @@ ENV PYTHONUNBUFFERED 1
 
 EXPOSE 8000
 
-RUN apt-get install --fix-missing -y libgeos-dev && \
-        apt-get install -y netcat && \
-       apt-get install -y postgis && \
-	adduser --system datapunt && \
+RUN     adduser --system datapunt && \
 	mkdir -p /static && \
 	mkdir -p /data && \
 	mkdir -p /unzipped && \
 	chown datapunt /static && \
 	chown datapunt /data && \
-	chown datapunt /unzipped && \
-	pip install uwsgi
+	chown datapunt /unzipped
 
-WORKDIR /app
-
-COPY requirements.txt /app/
-
-RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src /app/
 COPY deploy /deploy/
+COPY requirements.txt /app/
+
+WORKDIR /app
+
+
+RUN pip install --no-cache-dir -r requirements.txt
+
 
 USER datapunt
 

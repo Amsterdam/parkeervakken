@@ -1,16 +1,23 @@
-database:
-  image: amsterdam/postgres
-  environment:
-    POSTGRES_PASSWORD: insecure
-    POSTGRES_USER: parkeervakken
-    POSTGRES_DB: parkeervakken
+version: '3.0'
+services:
 
-importer:
-  image: build.datapunt.amsterdam.nl:5000/datapunt/parkeervakken:${ENVIRONMENT}
-  links:
-    - database:parkeervakken_db
-  environment:
-    DATABASE_NAME: parkeervakken
-    DATABASE_USER: parkeervakken
-    DATABASE_PASSWORD: insecure
-    PARKEERVAKKEN_OS_PASSWORD:
+  database:
+    image: amsterdam/postgres
+    environment:
+      POSTGRES_PASSWORD: insecure
+      POSTGRES_USER: parkeervakken
+      POSTGRES_DB: parkeervakken
+
+  tests:
+    build: ../../
+    links:
+      - database:parkeervakken_db
+    environment:
+      DATABASE_NAME: parkeervakken
+      DATABASE_USER: parkeervakken
+      DATABASE_PASSWORD: insecure
+      PARKEERVAKKEN_OS_PASSWORD:
+      ENVIRONMENT:
+    volumes:
+        - ./run_tests.sh:/app/run_tests.sh
+    command: /app/run_tests.sh

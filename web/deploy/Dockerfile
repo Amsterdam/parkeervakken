@@ -1,10 +1,9 @@
-ARG ENVIRONMENT
-FROM build.datapunt.amsterdam.nl:5000/datapunt/parkeervakken:$ENVIRONMENT
+FROM amsterdam/python
+MAINTAINER datapunt@amsterdam.nl
 
 USER root
 
-RUN apt-get install -y postgis && \
-	mkdir -p /data && \
+RUN     mkdir -p /data && \
 	mkdir -p /unzipped && \
 	chown datapunt /data && \
 	chown datapunt /unzipped
