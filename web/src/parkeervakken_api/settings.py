@@ -1,5 +1,4 @@
 import os
-import sys
 
 from parkeervakken_api.settings_common import *  # noqa F403
 from parkeervakken_api.settings_common import INSTALLED_APPS
@@ -13,7 +12,6 @@ from parkeervakken_api.settings_databases import LocationKey, \
 # Application definition
 
 INSTALLED_APPS += [
-    'geo_views',
     'parkeervakken_api',
 ]
 
@@ -57,7 +55,7 @@ DATABASES = {
 
 HEALTH_MODEL = 'parkeervakken_api.Parkeervak'
 
-# The following JWKS data was obtained in the authz project :  jwkgen -create -alg ES256
+# The following JWKS data was obtained in the authz project :  jwkgen -create -alg ES256   # noqa
 # This is a test public/private key def and added for testing .
 JWKS_TEST_KEY = """
     {

@@ -9,4 +9,5 @@ djangorestframework
 djangorestframework-gis
 drf-extensions
 git+https://github.com/Amsterdam/drf_amsterdam.git#egg=drf_amsterdam
-psycopg2
+psycopg2-binary
+factory-boy

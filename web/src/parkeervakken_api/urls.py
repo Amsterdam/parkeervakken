@@ -1,4 +1,4 @@
-"""parkeervakken URL Configuration
+"""Parkeervakken URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/1.9/topics/http/urls/
@@ -21,24 +21,26 @@ from rest_framework.renderers import CoreJSONRenderer
 from rest_framework import routers
 
 from . import views as api_views
-from geo_views import views as geo_views
 
 
 class ParkeervakkenView(routers.APIRootView):
     """
     De parkeervakken in de stad worden hier als een lijst getoond.
+
+    er kan een aantal velden gefilterd worden
     """
 
 
 class ParkeerVakkenRouter(routers.DefaultRouter):
     APIRootView = ParkeervakkenView
 
+
 parkeervakken = ParkeerVakkenRouter()
 parkeervakken.register(r'parkeervakken', api_views.ParkeervakList,
                        base_name='parkeervak')
-parkeervakken.register(r'geosearch', geo_views.GeoSearchViewSet,
+parkeervakken.register(r'geosearch', api_views.GeoSearchViewSet,
                        base_name='geosearch')
-parkeervakken.register(r'geoselection', geo_views.GeoSelectionViewSet,
+parkeervakken.register(r'geoselection', api_views.GeoSelectionViewSet,
                        base_name='geoselection')
 
 urls = parkeervakken.urls
@@ -48,6 +50,7 @@ urlpatterns = [
     url(r'^status/', include('parkeervakken_api.health.urls'))
 ]
 
+
 @api_view()
 @renderer_classes([CoreJSONRenderer])
 def monumenten_schema_view(request):
@@ -56,4 +59,3 @@ def monumenten_schema_view(request):
         patterns=urlpatterns
     )
     return response.Response(generator.get_schema(request=request))
-

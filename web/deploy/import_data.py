@@ -136,7 +136,6 @@ def find_latest_date(source, file_type):
     return last_date
 
 
-
 import_files = [
     os.path.join(directory, 'import_his_bm.sql'),
     os.path.join(directory, 'import_bm_bv.sql'),
@@ -333,11 +332,13 @@ def update_history(conn, cur, stadsdeel, date):
     :type date: str
     """
 
-    partition_table = create_partition(conn,
-                                       cur,
-                                       'parkeervakken',
-                                       'his',
-                                       stadsdeel)
+    partition_table = create_partition(
+        conn,
+        cur,
+        'parkeervakken',
+        'his',
+        stadsdeel
+    )
 
     # First truncate partition
     truncate = ("TRUNCATE his.{part_table}".format(part_table=partition_table))
@@ -580,11 +581,13 @@ def execute_sql(files, database, user, password, host, port):
     :type port: int
     """
 
-    conn = psycopg2.connect(database=database,
-                            user=user,
-                            password=password,
-                            host=host,
-                            port=port)
+    conn = psycopg2.connect(
+        database=database,
+        user=user,
+        password=password,
+        host=host,
+        port=port
+    )
 
     for filename in files:
         log.debug('SQL: %s', filename)
