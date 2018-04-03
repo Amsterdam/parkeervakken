@@ -7,7 +7,7 @@ set -x
 DIR="$(dirname $0)"
 
 dc() {
-	docker-compose -p parkeertest${ENVIRONMENT} -f ${DIR}/docker-compose.yml $*
+	docker-compose -p parkeertest -f ${DIR}/docker-compose.yml $*
 }
 
 
