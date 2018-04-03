@@ -1,8 +1,9 @@
 import os
 import sys
 
-from parkeervakken_api.settings_common import * # noqa F403
-from parkeervakken_api.settings_common import INSTALLED_APPS, DEBUG, DATAPUNT_API_URL
+from parkeervakken_api.settings_common import *  # noqa F403
+from parkeervakken_api.settings_common import INSTALLED_APPS
+
 from parkeervakken_api.settings_databases import LocationKey, \
     get_docker_host, \
     get_database_key, \

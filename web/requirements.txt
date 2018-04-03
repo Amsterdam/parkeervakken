@@ -15,6 +15,7 @@ django-rest-swagger==2.1.2
 djangorestframework==3.7.7
 djangorestframework-gis==0.12
 drf-extensions==0.3.1
+git+https://github.com/Amsterdam/drf_amsterdam.git#egg=drf_amsterdam
 idna==2.6
 itypes==1.1.0
 Jinja2==2.10

@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 import os
 import sys
 
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -33,7 +34,6 @@ INTERNAL_IPS = ('127.0.0.1', '0.0.0.0')
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.staticfiles',
@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django_extensions',
 
     'django.contrib.gis',
+    'datapunt_api',
     'rest_framework',
     'rest_framework_gis',
     'rest_framework_swagger',
@@ -103,15 +104,18 @@ REST_FRAMEWORK = dict(
         # 'rest_framework.authentication.BasicAuthentication',
         # 'rest_framework.authentication.SessionAuthentication',
     ),
+    DEFAULT_PAGINATION_CLASS=(
+        'datapunt_api.pagination.HALPagination',
+    ),
 
     DEFAULT_RENDERER_CLASSES=(
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer'
     ),
     DEFAULT_FILTER_BACKENDS=(
-        'rest_framework.filters.SearchFilter',
+        # 'rest_framework.filters.SearchFilter',
         # 'rest_framework.filters.OrderingFilter',
-
+        'django_filters.rest_framework.DjangoFilterBackend'
     ),
     COERCE_DECIMAL_TO_STRING=True,
 )

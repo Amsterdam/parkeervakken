@@ -3,8 +3,8 @@ import logging
 
 from rest_framework import serializers
 
-from parkeervakken_api.rest import DisplayField
-from parkeervakken_api.rest import HALSerializer
+from datapunt_api.rest import DisplayField
+from datapunt_api.rest import HALSerializer
 from parkeervakken_api.models import Parkeervak, GeoSelection
 
 

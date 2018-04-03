@@ -3,7 +3,7 @@ from django_filters.rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 
 from parkeervakken_api.models import Parkeervak
-from parkeervakken_api.rest import DatapuntViewSet
+from datapunt_api.rest import DatapuntViewSet
 from parkeervakken_api.serializers import ParkeervakSerializer
 
 
@@ -12,7 +12,16 @@ class ParkeervakFilter(FilterSet):
 
     class Meta(object):
         model = Parkeervak
-        fields = ('id',)
+        fields = (
+            'id',
+            'buurtcode',
+            'stadsdeel',
+            'straatnaam',
+            'soort',
+            'aantal',
+            'type',
+            'e_type',
+        )
 
 
 class ParkeervakList(DatapuntViewSet):
