@@ -2,11 +2,12 @@
 
 set -e
 set -u
+set -x
 
 DIR="$(dirname $0)"
 
 dc() {
-	docker-compose -p parkeervakken -f ${DIR}/docker-compose.yml $*
+	docker-compose -p parkeervakken${ENVIRONMENT} -f ${DIR}/docker-compose.yml $*
 }
 
 trap 'dc kill ; dc rm -f' EXIT
