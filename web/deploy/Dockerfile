@@ -3,7 +3,8 @@ MAINTAINER datapunt@amsterdam.nl
 
 USER root
 
-RUN     mkdir -p /data && \
+RUN apt-get install -y postgis && \
+	mkdir -p /data && \
 	mkdir -p /unzipped && \
 	chown datapunt /data && \
 	chown datapunt /unzipped
