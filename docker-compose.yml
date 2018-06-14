@@ -22,7 +22,6 @@ services:
       - DATABASE_NAME=parkeervakken
       - DATABASE_USER=parkeervakken
       - DATABASE_PASSWORD=insecure
-      - JWT_SHARED_SECRET_KEY=insecure1234567890
       - DJANGO_SETTINGS_MODULE=parkeervakken_api.settings
       - UWSGI_HTTP=0.0.0.0:8000
       - UWSGI_MODULE=parkeervakken_api.wsgi
