@@ -10,7 +10,7 @@ dc() {
 	docker-compose -p parkeervakken${ENVIRONMENT} -f ${DIR}/docker-compose.yml $*
 }
 
-trap 'dc kill ; dc rm -f' EXIT
+trap 'dc kill ; dc down ; dc rm -f' EXIT
 
 echo "Removing any previous backups"
 rm -rf ${DIR}/backups
@@ -30,5 +30,5 @@ dc run --rm importer
 
 echo "Running backups"
 dc exec -T database backup-db.sh parkeervakken
-
+dc down -v
 echo "Done"
