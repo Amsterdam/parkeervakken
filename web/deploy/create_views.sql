@@ -13,12 +13,14 @@ CREATE VIEW public.geo_parkeervakken AS
     pv.type            AS type,
 
     pv.e_type          AS e_type,
+    ec.title           AS e_type_desc,
     (CASE WHEN pv.e_type = 'E6b'
       THEN NULL
      ELSE pv.bord END) AS bord,
 
     pv.geom            AS geometrie
-  FROM bv.parkeervakken pv;
+  FROM bv.parkeervakken pv
+  LEFT JOIN bv.e_types ec ON ec.code = pv.e_type;
 
 
 CREATE VIEW bv.geo_parkeervakken AS
@@ -34,12 +36,14 @@ CREATE VIEW bv.geo_parkeervakken AS
     pv.type            AS type,
 
     pv.e_type          AS e_type,
+    ec.title           AS e_type_desc,
     (CASE WHEN pv.e_type = 'E6b'
       THEN NULL
      ELSE pv.bord END) AS bord,
 
     pv.geom            AS geometrie
-  FROM bv.parkeervakken pv;
+  FROM bv.parkeervakken pv
+  LEFT JOIN bv.e_types ec ON ec.code = pv.e_type;
 
 CREATE VIEW bv.geo_parkeervakken_reserveringen AS
 
@@ -52,6 +56,7 @@ CREATE VIEW bv.geo_parkeervakken_reserveringen AS
     pv.geom               AS geometrie,
 
     pv.e_type             AS e_type,
+	ec.title              AS e_type_desc,
     (CASE WHEN pv.e_type = 'E6b'
       THEN NULL
      ELSE pv.bord END)    AS bord,
@@ -64,4 +69,5 @@ CREATE VIEW bv.geo_parkeervakken_reserveringen AS
 
   FROM bv.parkeervakken pv
     LEFT JOIN bv.reserveringen re
-      ON pv.parkeer_id_md5 = re.parkeer_id_md5 AND reserverings_datum = current_date;
+      ON pv.parkeer_id_md5 = re.parkeer_id_md5 AND reserverings_datum = current_date
+    LEFT JOIN bv.e_types ec ON ec.code = pv.e_type;
