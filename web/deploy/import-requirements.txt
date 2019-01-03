@@ -24,7 +24,7 @@ python-dateutil==2.6.0
 python-keystoneclient==3.8.0
 python-swiftclient==3.2.0
 pytz==2017.2              # via babel, oslo.serialization, oslo.utils
-requests==2.12.5          # via keystoneauth1, python-keystoneclient, python-swiftclient
+requests==2.20.0          # via keystoneauth1, python-keystoneclient, python-swiftclient
 rfc3986==0.4.1            # via oslo.config
 six==1.10.0               # via debtcollector, keystoneauth1, oslo.config, oslo.i18n, oslo.serialization, oslo.utils, python-dateutil, python-keystoneclient, python-swiftclient, stevedore
 stevedore==1.21.0         # via keystoneauth1, oslo.config, python-keystoneclient
