@@ -16,6 +16,7 @@ class Parkeervak(models.Model):
     soort = models.CharField(max_length=20, null=True)
     type = models.CharField(max_length=20, null=True)
     e_type = models.CharField(max_length=5, null=True)
+    e_type_desc = models.CharField(max_length=100, null=True)
     bord = models.CharField(max_length=50, null=True)
     geometrie = models.MultiPolygonField(name='geometrie')
 
