@@ -48,7 +48,7 @@ class ParkeervakSerializer(BaseSerializer, HALSerializer):
 
     class Meta(object):
         model = Parkeervak
-        fields = ["_links", "_display", "id", "buurtcode", "straatnaam", "aantal", "type", "e_type", "bord", "geometrie"]
+        fields = ["_links", "_display", "id", "buurtcode", "straatnaam", "aantal", "type", "e_type", "e_type_desc", "bord", "geometrie"]
 
 
 class SimpleParkeervakSerializer(BaseSerializer, HALSerializer):

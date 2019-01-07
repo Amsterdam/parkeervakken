@@ -56,7 +56,7 @@ CREATE VIEW bv.geo_parkeervakken_reserveringen AS
     pv.geom               AS geometrie,
 
     pv.e_type             AS e_type,
-	ec.title              AS e_type_desc,
+	  ec.title              AS e_type_desc,
     (CASE WHEN pv.e_type = 'E6b'
       THEN NULL
      ELSE pv.bord END)    AS bord,
