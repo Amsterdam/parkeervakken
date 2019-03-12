@@ -18,6 +18,7 @@ mkdir -p ${DIR}/backups
 
 echo "Building dockers"
 dc down
+dc rm -f
 dc pull
 dc build
 
