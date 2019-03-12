@@ -9,5 +9,5 @@ djangorestframework
 djangorestframework-gis
 drf-extensions
 drf_amsterdam
-psycopg2-binary
+psycopg2
 factory-boy
