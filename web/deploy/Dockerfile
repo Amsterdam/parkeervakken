@@ -3,6 +3,7 @@ MAINTAINER datapunt@amsterdam.nl
 
 USER root
 
+RUN apt-get update --fix-missing
 RUN apt-get install -y postgis && \
 	mkdir -p /data && \
 	mkdir -p /unzipped && \
