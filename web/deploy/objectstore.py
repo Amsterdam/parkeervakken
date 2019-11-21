@@ -20,16 +20,16 @@ assert os.getenv('PARKEERVAKKEN_OBJECTSTORE_PASSWORD')
 
 global container
 
-container = 'parkeren'
+container = 'parkeervakken'
 
 object_store = {
     'auth_version': '2.0',
     'authurl': 'https://identity.stack.cloudvps.com/v2.0',
-    'user': os.getenv('OBJECTSTORE_USER', 'parkeren'),
+    'user': os.getenv('OBJECTSTORE_USER', 'parkeervakken'),
     'key': os.getenv('PARKEERVAKKEN_OBJECTSTORE_PASSWORD', 'insecure'),
-    'tenant_name': 'BGE000081_Parkeren',
+    'tenant_name': 'BGE000081 Parkeervakken',
     'os_options': {
-        'tenant_id': 'fd380ccb48444960837008800a453122',
+        'tenant_id': '091e3bedc85447ef936e82bcda88fcac',
         'region_name': 'NL',
     }
 }
