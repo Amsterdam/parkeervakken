@@ -20,7 +20,7 @@ assert os.getenv('PARKEERVAKKEN_OBJECTSTORE_PASSWORD')
 
 global container
 
-container = 'parkeervakken'
+container = 'Parkeervakken'
 
 object_store = {
     'auth_version': '2.0',
