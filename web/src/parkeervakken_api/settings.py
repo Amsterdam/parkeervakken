@@ -1,4 +1,6 @@
 import os
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 from parkeervakken_api.settings_common import *  # noqa F403
 from parkeervakken_api.settings_common import INSTALLED_APPS
@@ -54,3 +56,11 @@ DATABASES = {
 }
 
 HEALTH_MODEL = 'parkeervakken_api.Parkeervak'
+
+SENTRY_DSN = os.getenv('SENTRY_DSN')
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment="parkeervakken",
+        integrations=[DjangoIntegration()]
+    )

@@ -32,6 +32,7 @@ python-keystoneclient==3.22.0
 python-swiftclient==3.8.1
 pytz==2019.3
 requests==2.22.0
+sentry-sdk==0.14.2
 simplejson==3.17.0
 six==1.14.0
 text-unidecode==1.3

@@ -9,3 +9,4 @@ drf-extensions
 drf_amsterdam
 psycopg2
 factory-boy
+sentry-sdk
