@@ -6,7 +6,7 @@ coreapi==2.3.3
 coreschema==0.0.4
 cryptography==2.8
 defusedxml==0.6.0
-Django==2.2.10
+Django==2.2.13
 django-braces==1.14.0
 django-extensions==2.2.6
 django-filter==2.1.0
@@ -32,6 +32,7 @@ python-keystoneclient==3.22.0
 python-swiftclient==3.8.1
 pytz==2019.3
 requests==2.22.0
+sentry-sdk==0.14.2
 simplejson==3.17.0
 six==1.14.0
 text-unidecode==1.3
