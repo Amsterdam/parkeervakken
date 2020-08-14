@@ -1,5 +1,7 @@
 #!groovy
 
+String PLAYBOOK = 'deploy.yml'
+
 def tryStep(String message, Closure block, Closure tearDown = null) {
     try {
         block()
