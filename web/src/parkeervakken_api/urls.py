@@ -37,11 +37,11 @@ class ParkeerVakkenRouter(routers.DefaultRouter):
 
 parkeervakken = ParkeerVakkenRouter()
 parkeervakken.register(r'parkeervakken', api_views.ParkeervakList,
-                       base_name='parkeervak')
+                       basename='parkeervak')
 parkeervakken.register(r'geosearch', api_views.GeoSearchViewSet,
-                       base_name='geosearch')
+                       basename='geosearch')
 parkeervakken.register(r'geoselection', api_views.GeoSelectionViewSet,
-                       base_name='geoselection')
+                       basename='geoselection')
 
 urls = parkeervakken.urls
 
